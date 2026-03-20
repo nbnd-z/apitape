@@ -60,6 +60,22 @@ function compareValues(oldObj, newObj, path, result) {
   // Both are arrays - compare items
   if (oldType === 'array') {
     compareArrays(oldObj, newObj, path, result);
+    return;
+  }
+
+  // Primitive types - check for value changes
+  if (oldObj !== newObj) {
+    result.changed.push({
+      path,
+      oldType,
+      newType,
+      oldValue: oldObj,
+      newValue: newObj
+    });
+    // Value changes are not breaking, just drifted
+    if (result.status === 'fresh') {
+      result.status = 'drifted';
+    }
   }
 }
 
