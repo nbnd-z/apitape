@@ -1,6 +1,6 @@
 {
   "name": "api-tape",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Record real API responses as test fixtures. Auto-generate types, MSW handlers, and detect API drift.",
   "type": "module",
   "main": "src/index.js",
@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nbnd-z/apitape"
+    "url": "git+https://github.com/nbnd-z/apitape.git"
   },
   "bugs": {
     "url": "https://github.com/nbnd-z/apitape/issues"
