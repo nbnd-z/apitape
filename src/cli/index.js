@@ -51,6 +51,7 @@ program
   .option('-e, --env <environment>', 'Environment name for URL resolution')
   .option('-m, --method <method>', 'HTTP method (default: GET)')
   .option('-H, --header <headers...>', 'Request headers')
+  .option('-d, --data <body>', 'Request body (JSON string) for POST/PUT')
   .option('--auth <type>', 'Auth type: bearer, api-key')
   .option('--auth-token <token>', 'Auth token or API key')
   .option('--jsdoc', 'Generate JSDoc types file (.types.js)')
@@ -79,6 +80,8 @@ program
   .option('--config <path>', 'Config file path')
   .option('--fail-on-drift', 'Exit with error code if drift detected')
   .option('-j, --json', 'Output as JSON')
+  .option('-n, --name <name>', 'Filter to a specific fixture')
+  .option('--concurrency <number>', 'Max concurrent requests', '4')
   .action(withExitCode(diffCommand));
 
 program
@@ -88,6 +91,9 @@ program
   .option('--config <path>', 'Config file path')
   .option('--dry-run', 'Show what would be synced without making changes')
   .option('--force', 'Force re-capture even if unchanged')
+  .option('-n, --name <name>', 'Filter to a specific fixture')
+  .option('--concurrency <number>', 'Max concurrent requests', '4')
+  .option('--backup', 'Backup existing fixtures before overwriting')
   .action(withExitCode(syncCommand));
 
 program
@@ -117,6 +123,7 @@ program
 program
   .command('delete <name>')
   .description('Delete a fixture and its associated files')
+  .option('-f, --force', 'Skip confirmation prompt')
   .action(withExitCode(deleteCommand));
 
 program

@@ -3,6 +3,8 @@
  * @module core/http-client
  */
 
+import { HttpRequestError } from './errors.js';
+
 /**
  * @typedef {Object} AuthOptions
  * @property {string} type - Auth type (bearer, api-key)
@@ -17,6 +19,8 @@
  * @property {AuthOptions} auth - Authentication options
  * @property {Object} body - Request body
  * @property {number} timeout - Request timeout in ms
+ * @property {number} retries - Number of retries (default: 0)
+ * @property {number} retryDelay - Base delay in ms between retries (default: 1000)
  */
 
 /**
@@ -27,7 +31,16 @@
  */
 
 /**
- * Fetch with authentication support
+ * Sleep for a given number of milliseconds
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch with authentication and retry support
  * @param {string} url - URL to fetch
  * @param {FetchOptions} options - Fetch options
  * @returns {Promise<FetchResponse>} Response object
@@ -38,13 +51,13 @@ export async function fetchWithAuth(url, options = {}) {
     headers = {},
     auth = null,
     body = null,
-    timeout = 30000
+    timeout = 30000,
+    retries = 0,
+    retryDelay = 1000
   } = options;
 
-  // Build request headers
   const requestHeaders = { ...headers };
 
-  // Add auth headers
   if (auth) {
     const authHeader = buildAuthHeader(auth);
     if (authHeader) {
@@ -52,66 +65,68 @@ export async function fetchWithAuth(url, options = {}) {
     }
   }
 
-  // Build request config
-  const requestConfig = {
-    method,
-    headers: requestHeaders
-  };
+  const requestConfig = { method, headers: requestHeaders };
 
-  // Add body for non-GET requests
   if (body && method !== 'GET') {
     requestConfig.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
-  // Create abort controller for timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  requestConfig.signal = controller.signal;
-
-  try {
-    const response = await fetch(url, requestConfig);
-    clearTimeout(timeoutId);
-
-    // Parse response
-    const contentType = response.headers.get('content-type') || '';
-    let data;
-
-    if (contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      await sleep(retryDelay * Math.pow(2, attempt - 1));
     }
 
-    // Convert headers to object
-    const responseHeaders = {};
-    response.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    requestConfig.signal = controller.signal;
 
-    return {
-      status: response.status,
-      headers: responseHeaders,
-      data
-    };
+    try {
+      const response = await fetch(url, requestConfig);
+      clearTimeout(timeoutId);
 
-  } catch (error) {
-    clearTimeout(timeoutId);
+      // Retry on 5xx
+      if (response.status >= 500 && attempt < retries) {
+        lastError = new HttpRequestError(`HTTP ${response.status}`, { url, status: response.status });
+        continue;
+      }
 
-    if (error.name === 'AbortError') {
-      throw new Error(`Request timed out after ${timeout}ms`);
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      const responseHeaders = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      return { status: response.status, headers: responseHeaders, data };
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        lastError = new HttpRequestError(`Request timed out after ${timeout}ms`, { url });
+      } else {
+        lastError = error;
+      }
+
+      if (attempt >= retries) throw lastError;
     }
-
-    throw error;
   }
+
+  throw lastError;
 }
 
 /**
- * Sanitise a header value by stripping characters that could enable header injection.
+ * Sanitise a header value
  * @param {string} value - Raw header value
  * @returns {string} Sanitised value
  */
 function sanitizeHeaderValue(value) {
-  // Strip carriage returns, newlines, and null bytes
   return String(value).replace(/[\r\n\0]/g, '');
 }
 
@@ -127,17 +142,9 @@ function buildAuthHeader(auth) {
 
   switch (auth.type) {
     case 'bearer':
-      return {
-        name: 'Authorization',
-        value: `Bearer ${token}`
-      };
-
+      return { name: 'Authorization', value: `Bearer ${token}` };
     case 'api-key':
-      return {
-        name: auth.header || 'X-API-Key',
-        value: token
-      };
-
+      return { name: auth.header || 'X-API-Key', value: token };
     default:
       return null;
   }

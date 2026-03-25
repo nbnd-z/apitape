@@ -266,7 +266,7 @@ export function generateVariants(sampleData, options = {}) {
   const variants = [];
   
   for (let i = 0; i < count; i++) {
-    const variant = JSON.parse(JSON.stringify(sampleData));
+    const variant = structuredClone(sampleData);
     varyObject(variant, variations, rng);
     variants.push(variant);
   }

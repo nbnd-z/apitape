@@ -3,35 +3,58 @@
  * @module cli/commands/sync
  */
 
+import fs from 'fs/promises';
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
 import { regenerateExistingArtifacts } from '../../core/artifacts.js';
+import { hashValue } from '../../core/differ.js';
+import { sanitizeName } from '../../core/utils.js';
+import path from 'path';
+
+/**
+ * Concurrency-limited Promise.all
+ * @param {Array<Function>} tasks
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+async function pAll(tasks, limit) {
+  const results = new Array(tasks.length);
+  let idx = 0;
+  async function run() {
+    while (idx < tasks.length) {
+      const i = idx++;
+      results[i] = await tasks[i]();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
+  return results;
+}
 
 /**
  * Sync all fixtures from their original URLs
  * @param {Object} options - Command options
- * @param {string} options.env - Environment name
- * @param {boolean} options.dryRun - Show what would be synced without making changes
- * @param {boolean} options.force - Force re-capture even if unchanged
- * @param {string} options.config - Config file path
  * @returns {Promise<number>} Exit code
  */
 export async function syncCommand(options = {}) {
-  const { env, dryRun = false, force = false } = options;
+  const { env, dryRun = false, force = false, name: filterName, concurrency = 4, backup = false } = options;
 
   console.log(`Syncing fixtures from ${env || 'default'} environment...\n`);
 
   try {
     const config = await loadConfig(options.config);
-    const fixtures = await listFixtures();
+    let fixtures = await listFixtures();
+
+    if (filterName) {
+      fixtures = fixtures.filter(f => f.name === filterName);
+    }
+
+    const fixturesWithUrls = fixtures.filter(f => f.url);
 
     if (fixtures.length === 0) {
       console.log('No fixtures found. Run `apitape capture` first.');
       return 0;
     }
-
-    const fixturesWithUrls = fixtures.filter(f => f.url);
 
     if (fixturesWithUrls.length === 0) {
       console.log('No fixtures with source URLs found.');
@@ -40,16 +63,13 @@ export async function syncCommand(options = {}) {
 
     console.log(`Found ${fixturesWithUrls.length} fixture(s) to sync:\n`);
 
-    const results = [];
+    const fixturesDir = await getFixturesDir();
     let updated = 0;
     let unchanged = 0;
     let failed = 0;
-    const fixturesDir = await getFixturesDir();
 
-    for (const fixture of fixturesWithUrls) {
+    const tasks = fixturesWithUrls.map(fixture => async () => {
       const { name, url, method } = fixture;
-
-      // Use the shared resolveEnv for consistent URL resolution
       const resolvedUrl = resolveEnv(url, env, config);
 
       console.log(`Syncing ${name}...`);
@@ -57,30 +77,29 @@ export async function syncCommand(options = {}) {
 
       if (dryRun) {
         console.log(`  [DRY RUN] Would re-capture from ${resolvedUrl}\n`);
-        results.push({ name, status: 'dry-run' });
-        continue;
+        return 'dry-run';
       }
 
       try {
         const response = await fetchWithAuth(resolvedUrl, {
           method: method || 'GET',
-          headers: {
-            ...(config.defaultHeaders || {}),
-            ...(fixture.headers || {})
-          }
+          headers: { ...(config.defaultHeaders || {}), ...(fixture.headers || {}) }
         });
 
-        // Check if changed (unless force)
         if (!force) {
           const existingData = await loadFixture(name);
-          const isUnchanged = JSON.stringify(existingData) === JSON.stringify(response.data);
-
-          if (isUnchanged) {
+          if (hashValue(existingData) === hashValue(response.data)) {
             console.log(`  ✓ Unchanged\n`);
-            unchanged++;
-            results.push({ name, status: 'unchanged' });
-            continue;
+            return 'unchanged';
           }
+        }
+
+        // Backup existing fixture before overwriting
+        if (backup) {
+          const baseName = sanitizeName(name);
+          const src = path.join(fixturesDir, `${baseName}.json`);
+          const dest = path.join(fixturesDir, `${baseName}.backup.json`);
+          await fs.copyFile(src, dest).catch(() => {});
         }
 
         await saveFixture(name, response.data, {
@@ -91,23 +110,22 @@ export async function syncCommand(options = {}) {
           status: response.status
         });
 
-        // Regenerate only artifacts that already exist on disk
-        await regenerateExistingArtifacts(
-          name,
-          response.data,
-          { url, method: method || 'GET' },
-          fixturesDir
-        );
+        await regenerateExistingArtifacts(name, response.data, { url, method: method || 'GET' }, fixturesDir);
 
         console.log(`  ✓ Updated\n`);
-        updated++;
-        results.push({ name, status: 'updated' });
-
+        return 'updated';
       } catch (error) {
         console.log(`  ✗ Error: ${error.message}\n`);
-        failed++;
-        results.push({ name, status: 'error', error: error.message });
+        return 'error';
       }
+    });
+
+    const results = await pAll(tasks, Number(concurrency));
+
+    for (const r of results) {
+      if (r === 'updated') updated++;
+      else if (r === 'unchanged') unchanged++;
+      else if (r === 'error') failed++;
     }
 
     console.log('Sync Summary:');
@@ -120,7 +138,6 @@ export async function syncCommand(options = {}) {
     }
 
     return failed > 0 ? 1 : 0;
-
   } catch (error) {
     console.error(`Error: ${error.message}`);
     return 1;

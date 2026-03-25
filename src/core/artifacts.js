@@ -9,7 +9,7 @@ import path from 'path';
 import { generateJSDoc, generateTypeScript } from './generator.js';
 import { generateMSW } from '../formatters/msw.js';
 import { getFixturesDir } from './fixture-store.js';
-import { toPascalCase } from '../cli/utils.js';
+import { toPascalCase } from './utils.js';
 
 /**
  * @typedef {Object} ArtifactOptions

@@ -7,7 +7,8 @@ import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { loadConfig } from './config.js';
-import { sanitizeName } from '../cli/utils.js';
+import { sanitizeName } from './utils.js';
+import { FixtureNotFoundError, FixtureSizeError } from './errors.js';
 
 /**
  * @typedef {Object} FixtureMetadata
@@ -16,13 +17,6 @@ import { sanitizeName } from '../cli/utils.js';
  * @property {string} capturedAt - ISO timestamp
  * @property {Object} headers - Request headers
  * @property {number} status - Response status
- */
-
-/**
- * @typedef {Object} Fixture
- * @property {string} name - Fixture name
- * @property {Object} data - Fixture data
- * @property {FixtureMetadata} metadata - Fixture metadata
  */
 
 /**
@@ -56,14 +50,20 @@ function getFixturePaths(name, fixturesDir) {
  * @returns {Promise<void>}
  */
 export async function saveFixture(name, data, metadata = {}) {
-  const fixturesDir = await getFixturesDir();
+  const config = await loadConfig();
+  const fixturesDir = path.resolve(process.cwd(), config.fixturesDir || './fixtures');
 
-  // Ensure directory exists
+  // Enforce maxSizeBytes
+  const serialized = JSON.stringify(data, null, 2);
+  const size = Buffer.byteLength(serialized, 'utf-8');
+  if (config.maxSizeBytes && size > config.maxSizeBytes) {
+    throw new FixtureSizeError(name, size, config.maxSizeBytes);
+  }
+
   await fs.mkdir(fixturesDir, { recursive: true });
 
   const { dataPath, metaPath } = getFixturePaths(name, fixturesDir);
 
-  // Save data and metadata in parallel
   const fullMetadata = {
     name,
     ...metadata,
@@ -71,7 +71,7 @@ export async function saveFixture(name, data, metadata = {}) {
   };
 
   await Promise.all([
-    fs.writeFile(dataPath, JSON.stringify(data, null, 2)),
+    fs.writeFile(dataPath, serialized),
     fs.writeFile(metaPath, JSON.stringify(fullMetadata, null, 2))
   ]);
 }
@@ -90,7 +90,7 @@ export async function loadFixture(name) {
     return JSON.parse(content);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      throw new Error(`Fixture not found: ${name}`);
+      throw new FixtureNotFoundError(name);
     }
     throw error;
   }
@@ -123,9 +123,6 @@ export async function deleteFixture(name) {
   const { dataPath, metaPath } = getFixturePaths(name, fixturesDir);
   const baseName = sanitizeName(name);
 
-  let deleted = false;
-
-  // Collect all files to remove
   const filesToRemove = [
     dataPath,
     metaPath,
@@ -138,12 +135,7 @@ export async function deleteFixture(name) {
     filesToRemove.map(f => fs.unlink(f))
   );
 
-  // If the main data file was deleted successfully, consider it deleted
-  if (results[0].status === 'fulfilled') {
-    deleted = true;
-  }
-
-  return deleted;
+  return results[0].status === 'fulfilled';
 }
 
 /**
@@ -158,11 +150,7 @@ export async function listFixtures() {
   }
 
   const files = await fs.readdir(fixturesDir);
-  const fixtures = [];
-
-  // Only consider .json files that have a matching .meta.json
   const metaReadPromises = [];
-  const metaBaseNames = [];
 
   for (const file of files) {
     if (!file.endsWith('.json') || file.endsWith('.meta.json')) continue;
@@ -172,7 +160,6 @@ export async function listFixtures() {
 
     if (!files.includes(metaFile)) continue;
 
-    metaBaseNames.push(baseName);
     metaReadPromises.push(
       fs.readFile(path.join(fixturesDir, metaFile), 'utf-8')
         .then(content => JSON.parse(content))
@@ -180,10 +167,8 @@ export async function listFixtures() {
     );
   }
 
-  const metaResults = await Promise.all(metaReadPromises);
-  fixtures.push(...metaResults);
+  const fixtures = await Promise.all(metaReadPromises);
 
-  // Sort by capturedAt descending
   fixtures.sort((a, b) => {
     if (!a.capturedAt) return 1;
     if (!b.capturedAt) return -1;

@@ -12,6 +12,8 @@ describe('Public API exports', () => {
     // Config
     assert.strictEqual(typeof api.loadConfig, 'function');
     assert.strictEqual(typeof api.resolveEnv, 'function');
+    assert.strictEqual(typeof api.saveConfig, 'function');
+    assert.strictEqual(typeof api.clearConfigCache, 'function');
 
     // HTTP
     assert.strictEqual(typeof api.fetchWithAuth, 'function');
@@ -29,10 +31,13 @@ describe('Public API exports', () => {
     assert.strictEqual(typeof api.generateJSDoc, 'function');
     assert.strictEqual(typeof api.generateTypeScript, 'function');
     assert.strictEqual(typeof api.generateType, 'function');
+    assert.strictEqual(typeof api.setArraySampleSize, 'function');
 
     // Diff
     assert.strictEqual(typeof api.diffObjects, 'function');
     assert.strictEqual(typeof api.formatDiffResult, 'function');
+    assert.strictEqual(typeof api.hashValue, 'function');
+    assert.strictEqual(typeof api.setDiffArraySampleSize, 'function');
 
     // Mock generation
     assert.strictEqual(typeof api.generateMockData, 'function');
@@ -46,5 +51,16 @@ describe('Public API exports', () => {
     // Artifacts
     assert.strictEqual(typeof api.generateArtifacts, 'function');
     assert.strictEqual(typeof api.regenerateExistingArtifacts, 'function');
+
+    // Errors
+    assert.strictEqual(typeof api.ApitapeError, 'function');
+    assert.strictEqual(typeof api.FixtureNotFoundError, 'function');
+    assert.strictEqual(typeof api.ConfigError, 'function');
+    assert.strictEqual(typeof api.FixtureSizeError, 'function');
+    assert.strictEqual(typeof api.HttpRequestError, 'function');
+
+    // Core utils
+    assert.strictEqual(typeof api.sanitizeName, 'function');
+    assert.strictEqual(typeof api.toPascalCase, 'function');
   });
 });

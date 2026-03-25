@@ -9,6 +9,22 @@
  * @param {*} value - JavaScript value
  * @returns {string} JSDoc type string
  */
+/** @type {number} Configurable array sample size */
+let _arraySampleSize = 100;
+
+/**
+ * Set the array sample size for type inference
+ * @param {number} size
+ */
+export function setArraySampleSize(size) {
+  _arraySampleSize = size;
+}
+
+/**
+ * Infer JSDoc type from JavaScript value
+ * @param {*} value - JavaScript value
+ * @returns {string} JSDoc type string
+ */
 export function inferType(value) {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
@@ -32,7 +48,7 @@ export function inferType(value) {
       if (Array.isArray(value)) {
         if (value.length === 0) return 'Array<any>';
         const itemTypes = new Set(
-          value.slice(0, 10).map(item => inferType(item))
+          value.slice(0, _arraySampleSize).map(item => inferType(item))
         );
         if (itemTypes.size === 1) {
           return `Array<${[...itemTypes][0]}>`;
@@ -117,7 +133,7 @@ function singularize(s) {
  */
 function inferTsArrayType(arr) {
   if (arr.length === 0) return 'any[]';
-  const itemTypes = new Set(arr.slice(0, 10).map(v => tsScalarType(v)));
+  const itemTypes = new Set(arr.slice(0, _arraySampleSize).map(v => tsScalarType(v)));
   if (itemTypes.size === 1) return `${[...itemTypes][0]}[]`;
   return `(${[...itemTypes].join(' | ')})[]`;
 }

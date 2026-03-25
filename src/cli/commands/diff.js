@@ -9,81 +9,87 @@ import { listFixtures, loadFixture, loadMetadata } from '../../core/fixture-stor
 import { diffObjects, formatDiffResult } from '../../core/differ.js';
 
 /**
+ * Concurrency-limited Promise.all
+ * @param {Array<Function>} tasks - Array of () => Promise
+ * @param {number} limit - Concurrency limit
+ * @returns {Promise<Array>}
+ */
+async function pAll(tasks, limit) {
+  const results = new Array(tasks.length);
+  let idx = 0;
+  async function run() {
+    while (idx < tasks.length) {
+      const i = idx++;
+      results[i] = await tasks[i]();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
+  return results;
+}
+
+/**
  * Compare all fixtures against live API
  * @param {Object} options - Command options
- * @param {string} options.env - Environment name to compare against
- * @param {string} options.config - Config file path
- * @param {boolean} options.failOnDrift - Exit with error code on drift
- * @param {boolean} options.json - Output as JSON
  * @returns {Promise<number>} Exit code
  */
 export async function diffCommand(options = {}) {
-  const { env, failOnDrift = false, json = false } = options;
+  const { env, failOnDrift = false, json = false, name: filterName, concurrency = 4 } = options;
 
-  if (!json) {
-    console.log(`Comparing fixtures against ${env || 'default'} environment...\n`);
-  }
+  /** @param {string} msg */
+  const log = (msg) => { if (!json) console.log(msg); };
+
+  log(`Comparing fixtures against ${env || 'default'} environment...\n`);
 
   try {
     const config = await loadConfig(options.config);
-    const fixtures = await listFixtures();
+    let fixtures = await listFixtures();
+
+    if (filterName) {
+      fixtures = fixtures.filter(f => f.name === filterName);
+    }
 
     if (fixtures.length === 0) {
-      console.log('No fixtures found. Run `apitape capture` first.');
+      log('No fixtures found. Run `apitape capture` first.');
       return 0;
     }
 
-    const results = [];
-    let hasDrift = false;
-    let hasBreaking = false;
-
-    for (const fixture of fixtures) {
-      const name = fixture.name;
-      const metadata = await loadMetadata(name);
+    const tasks = fixtures.map(fixture => async () => {
+      const fName = fixture.name;
+      const metadata = await loadMetadata(fName);
       if (!metadata || !metadata.url) {
-        console.log(`  ? ${name} - No metadata found, skipping`);
-        continue;
+        log(`  ? ${fName} - No metadata found, skipping`);
+        return { name: fName, status: 'skipped' };
       }
 
-      // Use the shared resolveEnv for consistent URL resolution
       const url = resolveEnv(metadata.url, env, config);
-
-      console.log(`Checking ${name}...`);
+      log(`Checking ${fName}...`);
 
       try {
         const response = await fetchWithAuth(url, {
           method: metadata.method || 'GET',
-          headers: {
-            ...(config.defaultHeaders || {}),
-            ...(metadata.headers || {})
-          }
+          headers: { ...(config.defaultHeaders || {}), ...(metadata.headers || {}) }
         });
 
-        const capturedData = await loadFixture(name);
+        const capturedData = await loadFixture(fName);
         const diff = diffObjects(capturedData, response.data);
 
-        if (diff.status !== 'fresh') {
-          hasDrift = true;
-          if (diff.status === 'breaking') {
-            hasBreaking = true;
-          }
-        }
+        log(formatDiffResult(diff));
+        log('');
 
-        results.push({ name, url, diff, status: diff.status });
-
-        console.log(formatDiffResult(diff));
-        console.log();
-
+        return { name: fName, url, diff, status: diff.status };
       } catch (error) {
-        console.log(`  ✗ ${name} - Error: ${error.message}\n`);
-        results.push({ name, url, error: error.message, status: 'error' });
+        log(`  ✗ ${fName} - Error: ${error.message}\n`);
+        return { name: fName, url, error: error.message, status: 'error' };
       }
-    }
+    });
+
+    const results = await pAll(tasks, Number(concurrency));
 
     const fresh = results.filter(r => r.status === 'fresh').length;
     const drifted = results.filter(r => r.status === 'drifted').length;
     const breaking = results.filter(r => r.status === 'breaking').length;
     const errors = results.filter(r => r.status === 'error').length;
+    const hasDrift = drifted > 0 || breaking > 0;
 
     if (json) {
       console.log(JSON.stringify({ results, summary: { fresh, drifted, breaking, errors } }, null, 2));
@@ -96,17 +102,16 @@ export async function diffCommand(options = {}) {
     }
 
     if (failOnDrift && hasDrift) {
-      console.log('\nDrift detected! Fixtures are out of sync with API.');
+      log('\nDrift detected! Fixtures are out of sync with API.');
       return 1;
     }
 
-    if (hasBreaking) {
-      console.log('\nBreaking changes detected! Update your fixtures before tests fail.');
+    if (breaking > 0) {
+      log('\nBreaking changes detected! Update your fixtures before tests fail.');
       return failOnDrift ? 1 : 0;
     }
 
     return 0;
-
   } catch (error) {
     console.error(`Error: ${error.message}`);
     return 1;
