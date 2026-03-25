@@ -3,14 +3,9 @@
  * @module cli/commands/mock
  */
 
-import fs from 'fs';
-import path from 'path';
-import { loadConfig } from '../../core/config.js';
 import { listFixtures, loadFixture, loadMetadata, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
 import { generateVariants } from '../../core/mock-generator.js';
-import { generateJSDoc, generateTypeScript } from '../../core/generator.js';
-import { generateMSW } from '../../formatters/msw.js';
-import { toPascalCase } from '../utils.js';
+import { generateArtifacts } from '../../core/artifacts.js';
 
 /**
  * Generate mock data from existing fixture
@@ -22,15 +17,16 @@ import { toPascalCase } from '../utils.js';
  * @param {boolean} options.typescript - Generate TypeScript types
  * @param {boolean} options.msw - Generate MSW handlers
  * @param {Array<string>} options.vary - Fields to vary
+ * @param {number} [options.seed] - Seed for deterministic output
  * @returns {Promise<number>} Exit code
  */
 export async function mockCommand(name, options = {}) {
-  const { count = 3, output, vary = [] } = options;
+  const { count = 3, output, vary = [], seed } = options;
+  const parsedSeed = seed != null ? Number(seed) : null;
 
   console.log(`Generating mock variants from fixture: ${name}\n`);
 
   try {
-    // Load existing fixture
     const data = await loadFixture(name);
     const metadata = await loadMetadata(name);
 
@@ -41,14 +37,12 @@ export async function mockCommand(name, options = {}) {
 
     const fixturesDir = await getFixturesDir();
     const baseName = output || name;
-    
+
     console.log(`Generating ${count} variant(s)...`);
     console.log(`Base data keys: ${Object.keys(data).join(', ')}\n`);
 
-    // Generate variants
-    const variants = generateVariants(data, { count, variations: vary });
+    const variants = generateVariants(data, { count, variations: vary, seed: parsedSeed });
 
-    // Save each variant
     for (let i = 0; i < variants.length; i++) {
       const variantName = count === 1 ? baseName : `${baseName}-${i + 1}`;
       const variantData = variants[i];
@@ -63,32 +57,13 @@ export async function mockCommand(name, options = {}) {
 
       console.log(`✓ Generated: ${variantName}`);
 
-      // Generate types if requested
-      if (options.typescript) {
-        const typeName = toPascalCase(variantName);
-        const typeContent = generateTypeScript(variantData, typeName);
-        const typePath = path.join(fixturesDir, `${variantName}.d.ts`);
-        fs.writeFileSync(typePath, typeContent + '\n');
-      }
-
-      if (options.jsdoc) {
-        const typeName = toPascalCase(variantName);
-        const typeContent = generateJSDoc(variantData, typeName);
-        const jsdocContent = `// Auto-generated JSDoc types for ${variantName}\n${typeContent}\n\nexport const ${variantName} = require('./${variantName}.json');\n`;
-        const typePath = path.join(fixturesDir, `${variantName}.types.js`);
-        fs.writeFileSync(typePath, jsdocContent);
-      }
-
-      // Generate MSW handler if requested
-      if (options.msw) {
-        const mswContent = generateMSW({
-          name: variantName,
-          url: metadata?.url || `/${variantName}`,
-          method: metadata?.method || 'GET'
-        });
-        const mswPath = path.join(fixturesDir, `${variantName}.msw.js`);
-        fs.writeFileSync(mswPath, mswContent);
-      }
+      await generateArtifacts(
+        variantName,
+        variantData,
+        { jsdoc: options.jsdoc, typescript: options.typescript, msw: options.msw },
+        { url: metadata?.url, method: metadata?.method },
+        fixturesDir
+      );
     }
 
     console.log(`\n✅ Generated ${variants.length} mock variant(s)`);
@@ -112,7 +87,7 @@ export async function mockAllCommand(options = {}) {
 
   try {
     const fixtures = await listFixtures();
-    
+
     if (fixtures.length === 0) {
       console.log('No fixtures found. Run `apitape capture` first.');
       return 0;
@@ -123,7 +98,7 @@ export async function mockAllCommand(options = {}) {
 
     for (const fixture of fixturesWithUrls) {
       console.log(`Processing ${fixture.name}...`);
-      
+
       try {
         await mockCommand(fixture.name, { ...options, count });
         generated++;

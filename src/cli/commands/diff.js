@@ -3,7 +3,7 @@
  * @module cli/commands/diff
  */
 
-import { loadConfig } from '../../core/config.js';
+import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, loadMetadata } from '../../core/fixture-store.js';
 import { diffObjects, formatDiffResult } from '../../core/differ.js';
@@ -14,6 +14,7 @@ import { diffObjects, formatDiffResult } from '../../core/differ.js';
  * @param {string} options.env - Environment name to compare against
  * @param {string} options.config - Config file path
  * @param {boolean} options.failOnDrift - Exit with error code on drift
+ * @param {boolean} options.json - Output as JSON
  * @returns {Promise<number>} Exit code
  */
 export async function diffCommand(options = {}) {
@@ -44,23 +45,12 @@ export async function diffCommand(options = {}) {
         continue;
       }
 
-      // Resolve URL with environment
-      let url = metadata.url;
-      if (env && config.environments?.[env]) {
-        const baseUrl = config.environments[env];
-        try {
-          const urlObj = new URL(metadata.url, baseUrl);
-          url = urlObj.href;
-        } catch {
-          // If metadata.url is full URL, use as-is
-          url = metadata.url;
-        }
-      }
+      // Use the shared resolveEnv for consistent URL resolution
+      const url = resolveEnv(metadata.url, env, config);
 
       console.log(`Checking ${name}...`);
 
       try {
-        // Fetch live API
         const response = await fetchWithAuth(url, {
           method: metadata.method || 'GET',
           headers: {
@@ -69,10 +59,7 @@ export async function diffCommand(options = {}) {
           }
         });
 
-        // Load captured fixture
         const capturedData = await loadFixture(name);
-
-        // Compare
         const diff = diffObjects(capturedData, response.data);
 
         if (diff.status !== 'fresh') {
@@ -82,28 +69,17 @@ export async function diffCommand(options = {}) {
           }
         }
 
-        results.push({
-          name,
-          url,
-          diff,
-          status: diff.status
-        });
+        results.push({ name, url, diff, status: diff.status });
 
         console.log(formatDiffResult(diff));
         console.log();
 
       } catch (error) {
         console.log(`  ✗ ${name} - Error: ${error.message}\n`);
-        results.push({
-          name,
-          url,
-          error: error.message,
-          status: 'error'
-        });
+        results.push({ name, url, error: error.message, status: 'error' });
       }
     }
 
-    // Summary
     const fresh = results.filter(r => r.status === 'fresh').length;
     const drifted = results.filter(r => r.status === 'drifted').length;
     const breaking = results.filter(r => r.status === 'breaking').length;

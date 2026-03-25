@@ -3,23 +3,20 @@
  * @module cli/commands/types
  */
 
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
 import { loadConfig } from '../../core/config.js';
 import { listFixtures, loadFixture } from '../../core/fixture-store.js';
 import { generateJSDoc, generateTypeScript } from '../../core/generator.js';
 import { toPascalCase } from '../utils.js';
-import fs from 'fs';
-import path from 'path';
-
-/**
- * @typedef {Object} TypesOptions
- * @property {string} format - Output format (jsdoc, typescript)
- * @property {string} output - Output directory
- */
 
 /**
  * Generate types from all fixtures
- * @param {TypesOptions} options - Command options
- * @returns {Promise<void>}
+ * @param {Object} options - Command options
+ * @param {string} options.format - Output format (jsdoc, typescript)
+ * @param {string} options.output - Output directory
+ * @returns {Promise<number>} Exit code
  */
 export async function typesCommand(options = {}) {
   console.log('Generating types from fixtures...');
@@ -29,15 +26,13 @@ export async function typesCommand(options = {}) {
     const format = options.format || config.typesFormat || 'jsdoc';
     const outputDir = options.output || config.typesOutput || './fixtures';
 
-    // List all fixtures
     const fixtures = await listFixtures();
 
     if (fixtures.length === 0) {
       console.log('No fixtures found.');
-      return;
+      return 0;
     }
 
-    // Generate types for each fixture
     const typeContents = [];
 
     for (const fixture of fixtures) {
@@ -51,21 +46,20 @@ export async function typesCommand(options = {}) {
       }
     }
 
-    // Write types file
     const typeFileName = format === 'typescript' ? 'fixtures.d.ts' : 'fixtures.jsdoc.js';
     const outputPath = path.join(outputDir, typeFileName);
 
-    // Ensure output directory exists
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    if (!existsSync(outputDir)) {
+      await fs.mkdir(outputDir, { recursive: true });
     }
 
-    fs.writeFileSync(outputPath, typeContents.join('\n\n'));
+    await fs.writeFile(outputPath, typeContents.join('\n\n'));
     console.log(`✓ Generated types: ${outputPath}`);
     console.log(`  (${fixtures.length} fixtures processed)`);
 
+    return 0;
   } catch (error) {
     console.error(`✗ Error: ${error.message}`);
-    process.exit(1);
+    return 1;
   }
 }

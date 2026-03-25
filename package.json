@@ -1,9 +1,13 @@
 {
   "name": "apitape",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Record real API responses as test fixtures. Auto-generate types, MSW handlers, and detect API drift.",
   "type": "module",
   "main": "src/index.js",
+  "files": [
+    "src/",
+    "templates/"
+  ],
   "bin": {
     "apitape": "src/cli/index.js"
   },
@@ -12,7 +16,17 @@
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },
-  "keywords": ["test-fixtures", "api-recording", "api-testing", "msw", "mock-data", "typescript", "api-drift", "snapshot-testing", "openapi"],
+  "keywords": [
+    "test-fixtures",
+    "api-recording",
+    "api-testing",
+    "msw",
+    "mock-data",
+    "typescript",
+    "api-drift",
+    "snapshot-testing",
+    "openapi"
+  ],
   "engines": {
     "node": ">=18.0.0"
   },
@@ -20,12 +34,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danlct27/apitape"
+    "url": "https://github.com/nbnd-z/apitape"
   },
   "bugs": {
-    "url": "https://github.com/danlct27/apitape/issues"
+    "url": "https://github.com/nbnd-z/apitape/issues"
   },
-  "homepage": "https://github.com/danlct27/apitape#readme",
+  "homepage": "https://github.com/nbnd-z/apitape#readme",
   "dependencies": {
     "commander": "^12.0.0"
   },

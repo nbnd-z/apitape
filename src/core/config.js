@@ -3,7 +3,8 @@
  * @module core/config
  */
 
-import fs from 'fs';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 
 /**
@@ -28,12 +29,12 @@ const CONFIG_FILE = 'apitape.config.json';
 export async function loadConfig(filePath) {
   const configPath = filePath || path.join(process.cwd(), CONFIG_FILE);
 
-  if (!fs.existsSync(configPath)) {
+  if (!existsSync(configPath)) {
     return getDefaultConfig();
   }
 
   try {
-    const content = fs.readFileSync(configPath, 'utf-8');
+    const content = await fs.readFile(configPath, 'utf-8');
     const config = JSON.parse(content);
     return { ...getDefaultConfig(), ...config };
   } catch (error) {
@@ -62,8 +63,10 @@ function getDefaultConfig() {
 }
 
 /**
- * Resolve environment variable in URL
- * @param {string} url - URL with potential env variables
+ * Resolve environment variable in URL.
+ * Handles relative paths, full URLs, and placeholder substitution.
+ *
+ * @param {string} url - URL (absolute or relative)
  * @param {string} envName - Environment name
  * @param {Config} config - Configuration object
  * @returns {string} Resolved URL
@@ -78,7 +81,7 @@ export function resolveEnv(url, envName, config) {
 
   // If URL is relative, prepend base URL
   if (url.startsWith('/') && baseUrl) {
-    return baseUrl + url;
+    return baseUrl.replace(/\/+$/, '') + url;
   }
 
   // Replace env placeholders
@@ -98,5 +101,5 @@ export function resolveEnv(url, envName, config) {
  */
 export async function saveConfig(config, filePath) {
   const configPath = filePath || path.join(process.cwd(), CONFIG_FILE);
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }

@@ -1,6 +1,30 @@
 # apitape
 
+[![npm version](https://img.shields.io/npm/v/apitape)](https://www.npmjs.com/package/apitape)
+[![license](https://img.shields.io/npm/l/apitape)](https://github.com/nbnd-z/apitape/blob/main/LICENSE)
+[![node](https://img.shields.io/node/v/apitape)](https://nodejs.org)
+
 Record real API responses as test fixtures with auto-generated types and MSW handlers — then detect drift before your tests break.
+
+## How It Works
+
+```
+capture → fixtures (.json + .meta.json)
+            ├── types    (.d.ts / .types.js)
+            ├── msw      (.msw.js)
+            └── mock     (variant fixtures)
+
+diff   → compare fixtures against live API → detect drift
+sync   → re-capture all fixtures from original URLs
+import → generate fixtures from OpenAPI spec
+```
+
+1. **Capture** a live API response as a JSON fixture with metadata
+2. **Generate** TypeScript interfaces, JSDoc typedefs, or MSW handlers from the fixture
+3. **Detect drift** by diffing fixtures against the live API — catch breaking changes in CI
+4. **Re-sync** all fixtures when the API intentionally changes
+5. **Import** fixtures from an OpenAPI spec, optionally with mock data
+6. **Mock** — generate randomised variants of existing fixtures for broader test coverage
 
 ## Features
 
@@ -9,10 +33,11 @@ Record real API responses as test fixtures with auto-generated types and MSW han
 - 🔍 Detect API drift with `diff` — catch breaking changes before your tests do
 - 🔄 Re-sync all fixtures from live APIs with one command
 - 🧪 Generate MSW handlers automatically for browser/node mocking
-- 📦 Import fixtures from OpenAPI specs
+- 📦 Import fixtures from OpenAPI specs (JSON & YAML)
 - 🎲 Generate mock data variants from existing fixtures
 - 🔐 Support for Bearer and API Key authentication (CLI flags or config)
 - 📁 Simple fixture storage with metadata
+- 🪶 Zero runtime dependencies (besides commander)
 
 ## Installation
 
@@ -145,6 +170,12 @@ apitape capture https://api.example.com/users \
   --auth bearer \
   --auth-token "your-token"
 
+# With custom headers
+apitape capture https://api.example.com/users \
+  --name users \
+  -H "Accept: text/plain" \
+  -H "X-Custom: value"
+
 # Capture error responses (404, 500, etc.)
 apitape capture https://api.example.com/missing \
   --name not-found \
@@ -160,7 +191,7 @@ Options:
 - `-n, --name <name>` - Fixture name (required)
 - `-e, --env <environment>` - Environment name for URL resolution
 - `-m, --method <method>` - HTTP method (default: GET)
-- `-H, --header <headers...>` - Request headers
+- `-H, --header <headers...>` - Request headers (format: `"Key: Value"`)
 - `--auth <type>` - Auth type: bearer, api-key
 - `--auth-token <token>` - Auth token or API key
 - `--jsdoc` - Generate JSDoc types file
@@ -204,6 +235,7 @@ apitape diff
 apitape diff --env staging
 apitape diff --fail-on-drift  # Exit code 1 on drift (CI-friendly)
 apitape diff --json           # Machine-readable JSON output
+apitape diff --config ./custom-config.json
 ```
 
 ### `sync`
@@ -215,15 +247,17 @@ apitape sync
 apitape sync --dry-run
 apitape sync --force
 apitape sync --env staging
+apitape sync --config ./custom-config.json
 ```
 
 ### `import <spec>`
 
-Import fixtures from an OpenAPI specification (JSON format).
+Import fixtures from an OpenAPI specification (JSON or YAML).
 
 ```bash
 apitape import ./openapi.json
-apitape import ./openapi.json --mock --typescript --msw
+apitape import ./openapi.yaml
+apitape import ./openapi.yml --mock --typescript --msw
 ```
 
 ### `mock <name>`
@@ -234,6 +268,16 @@ Generate mock data variants from existing fixture.
 apitape mock users --count 5
 apitape mock users --count 3 --vary name email
 apitape mock users --count 3 --typescript --msw
+apitape mock users --count 3 --seed 42  # Deterministic output
+```
+
+### `mock:all`
+
+Generate mock variants for all fixtures at once.
+
+```bash
+apitape mock:all
+apitape mock:all --count 5 --typescript --msw
 ```
 
 ## CI Integration
@@ -264,9 +308,11 @@ import {
   // Diff
   diffObjects, formatDiffResult,
   // Mock generation
-  generateMockData, generateVariants,
+  generateMockData, generateVariants, createRng,
   // MSW
-  generateMSW, generateMSWHandlers
+  generateMSW, generateMSWHandlers,
+  // Artifact generation (types + MSW in one call)
+  generateArtifacts, regenerateExistingArtifacts
 } from 'apitape';
 ```
 
@@ -283,8 +329,11 @@ await saveFixture('users', response.data, {
   method: 'GET'
 });
 
-// Generate deep recursive TypeScript interfaces
-const ts = generateTypeScript(response.data, 'Users');
+// Generate TypeScript + MSW in one call
+await generateArtifacts('users', response.data,
+  { typescript: true, msw: true },
+  { url: 'https://api.example.com/users', method: 'GET' }
+);
 
 // Detect drift
 const fixture = await loadFixture('users');
@@ -294,11 +343,29 @@ const diff = diffObjects(fixture, liveResponse.data);
 if (diff.status === 'breaking') {
   console.error(formatDiffResult(diff));
 }
+
+// Generate mock variants
+const variants = generateVariants(response.data, { count: 5, variations: ['name', 'email'] });
 ```
+
+## Limitations
+
+- Array drift detection compares only the first 5 items for structural changes. Differences beyond index 4 are not reported.
+- Mock data generation uses `Math.random()` by default and is non-deterministic. Pass `--seed <number>` for reproducible output in snapshot tests.
+- OpenAPI import supports JSON and YAML specs.
 
 ## Requirements
 
 - Node.js 18.0.0 or higher
+
+## Contributing
+
+```bash
+git clone https://github.com/nbnd-z/apitape.git
+cd apitape
+npm install
+npm test
+```
 
 ## License
 

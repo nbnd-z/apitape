@@ -3,14 +3,10 @@
  * @module cli/commands/sync
  */
 
-import { loadConfig } from '../../core/config.js';
+import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
-import { listFixtures, loadFixture, loadMetadata, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
-import { generateJSDoc, generateTypeScript } from '../../core/generator.js';
-import { generateMSW } from '../../formatters/msw.js';
-import { toPascalCase } from '../utils.js';
-import fs from 'fs';
-import path from 'path';
+import { listFixtures, loadFixture, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
+import { regenerateExistingArtifacts } from '../../core/artifacts.js';
 
 /**
  * Sync all fixtures from their original URLs
@@ -35,9 +31,8 @@ export async function syncCommand(options = {}) {
       return 0;
     }
 
-    // Filter fixtures with URLs
     const fixturesWithUrls = fixtures.filter(f => f.url);
-    
+
     if (fixturesWithUrls.length === 0) {
       console.log('No fixtures with source URLs found.');
       return 0;
@@ -49,21 +44,13 @@ export async function syncCommand(options = {}) {
     let updated = 0;
     let unchanged = 0;
     let failed = 0;
+    const fixturesDir = await getFixturesDir();
 
     for (const fixture of fixturesWithUrls) {
       const { name, url, method } = fixture;
-      
-      // Resolve URL with environment
-      let resolvedUrl = url;
-      if (env && config.environments?.[env]) {
-        const baseUrl = config.environments[env];
-        try {
-          const urlObj = new URL(url, baseUrl);
-          resolvedUrl = urlObj.href;
-        } catch {
-          resolvedUrl = url;
-        }
-      }
+
+      // Use the shared resolveEnv for consistent URL resolution
+      const resolvedUrl = resolveEnv(url, env, config);
 
       console.log(`Syncing ${name}...`);
       console.log(`  URL: ${resolvedUrl}`);
@@ -75,7 +62,6 @@ export async function syncCommand(options = {}) {
       }
 
       try {
-        // Fetch live API
         const response = await fetchWithAuth(resolvedUrl, {
           method: method || 'GET',
           headers: {
@@ -86,9 +72,9 @@ export async function syncCommand(options = {}) {
 
         // Check if changed (unless force)
         if (!force) {
-          const existingData = await loadFixtureData(name);
+          const existingData = await loadFixture(name);
           const isUnchanged = JSON.stringify(existingData) === JSON.stringify(response.data);
-          
+
           if (isUnchanged) {
             console.log(`  ✓ Unchanged\n`);
             unchanged++;
@@ -97,7 +83,6 @@ export async function syncCommand(options = {}) {
           }
         }
 
-        // Save updated fixture
         await saveFixture(name, response.data, {
           url,
           method: method || 'GET',
@@ -106,27 +91,13 @@ export async function syncCommand(options = {}) {
           status: response.status
         });
 
-        // Regenerate types if they exist
-        const fixturesDir = config.fixturesDir || './fixtures';
-        const jsdocPath = path.join(fixturesDir, `${name}.types.js`);
-        const tsPath = path.join(fixturesDir, `${name}.d.ts`);
-        const mswPath = path.join(fixturesDir, `${name}.msw.js`);
-
-        if (fs.existsSync(jsdocPath)) {
-          const typeContent = generateJSDoc(response.data, toPascalCase(name));
-          const jsdocContent = `// Auto-generated JSDoc types for ${name}\n${typeContent}\n\nexport const ${name} = require('./${name}.json');\n`;
-          fs.writeFileSync(jsdocPath, jsdocContent);
-        }
-
-        if (fs.existsSync(tsPath)) {
-          const typeContent = generateTypeScript(response.data, toPascalCase(name));
-          fs.writeFileSync(tsPath, typeContent + '\n');
-        }
-
-        if (fs.existsSync(mswPath)) {
-          const mswContent = generateMSW({ name, url, method: method || 'GET' });
-          fs.writeFileSync(mswPath, mswContent);
-        }
+        // Regenerate only artifacts that already exist on disk
+        await regenerateExistingArtifacts(
+          name,
+          response.data,
+          { url, method: method || 'GET' },
+          fixturesDir
+        );
 
         console.log(`  ✓ Updated\n`);
         updated++;
@@ -139,12 +110,11 @@ export async function syncCommand(options = {}) {
       }
     }
 
-    // Summary
     console.log('Sync Summary:');
     console.log(`  Updated: ${updated}`);
     console.log(`  Unchanged: ${unchanged}`);
     console.log(`  Failed: ${failed}`);
-    
+
     if (dryRun) {
       console.log(`\n[DRY RUN] No changes were made.`);
     }
@@ -155,20 +125,4 @@ export async function syncCommand(options = {}) {
     console.error(`Error: ${error.message}`);
     return 1;
   }
-}
-
-/**
- * Load fixture data
- * @param {string} name - Fixture name
- * @returns {Promise<Object>} Fixture data
- */
-async function loadFixtureData(name) {
-  const fixturesDir = await getFixturesDir();
-  const dataPath = path.join(fixturesDir, `${name}.json`);
-  
-  if (!fs.existsSync(dataPath)) {
-    throw new Error(`Fixture not found: ${name}`);
-  }
-  
-  return JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 }

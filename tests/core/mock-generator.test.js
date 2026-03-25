@@ -4,7 +4,7 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { generateMockData, generateVariants } from '../../src/core/mock-generator.js';
+import { generateMockData, generateVariants, createRng } from '../../src/core/mock-generator.js';
 
 describe('Mock Generator', () => {
   describe('generateMockData', () => {
@@ -332,6 +332,96 @@ describe('Mock Generator', () => {
       const variants = generateVariants(sample, { count: 1 });
       
       assert.strictEqual(variants.length, 1);
+    });
+  });
+
+  describe('createRng', () => {
+    it('should return Math.random when no seed provided', () => {
+      const rng = createRng(null);
+      assert.strictEqual(rng, Math.random);
+    });
+
+    it('should return Math.random when seed is undefined', () => {
+      const rng = createRng(undefined);
+      assert.strictEqual(rng, Math.random);
+    });
+
+    it('should return a deterministic function when seed is provided', () => {
+      const rng1 = createRng(42);
+      const rng2 = createRng(42);
+      const values1 = Array.from({ length: 10 }, () => rng1());
+      const values2 = Array.from({ length: 10 }, () => rng2());
+      assert.deepStrictEqual(values1, values2);
+    });
+
+    it('should produce different sequences for different seeds', () => {
+      const rng1 = createRng(1);
+      const rng2 = createRng(2);
+      const values1 = Array.from({ length: 5 }, () => rng1());
+      const values2 = Array.from({ length: 5 }, () => rng2());
+      assert.notDeepStrictEqual(values1, values2);
+    });
+
+    it('should produce values in [0, 1)', () => {
+      const rng = createRng(123);
+      for (let i = 0; i < 100; i++) {
+        const v = rng();
+        assert.ok(v >= 0 && v < 1, `Value ${v} out of range`);
+      }
+    });
+  });
+
+  describe('seeded generateMockData', () => {
+    it('should produce deterministic output with same seed', () => {
+      const schema = {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'integer', minimum: 0, maximum: 100 },
+          active: { type: 'boolean' }
+        },
+        required: ['name', 'age', 'active']
+      };
+      const rng1 = createRng(99);
+      const rng2 = createRng(99);
+      const result1 = generateMockData(schema, null, new Map(), rng1);
+      const result2 = generateMockData(schema, null, new Map(), rng2);
+      assert.deepStrictEqual(result1, result2);
+    });
+
+    it('should produce different output with different seeds', () => {
+      const schema = { type: 'string' };
+      const rng1 = createRng(1);
+      const rng2 = createRng(2);
+      const result1 = generateMockData(schema, null, new Map(), rng1);
+      const result2 = generateMockData(schema, null, new Map(), rng2);
+      assert.notStrictEqual(result1, result2);
+    });
+  });
+
+  describe('seeded generateVariants', () => {
+    it('should produce deterministic variants with same seed', () => {
+      const sample = { name: 'Alice', count: 50, email: 'alice@test.com' };
+      const v1 = generateVariants(sample, { count: 5, seed: 42 });
+      const v2 = generateVariants(sample, { count: 5, seed: 42 });
+      assert.deepStrictEqual(v1, v2);
+    });
+
+    it('should produce different variants with different seeds', () => {
+      const sample = { name: 'Bob', count: 100 };
+      const v1 = generateVariants(sample, { count: 3, seed: 1 });
+      const v2 = generateVariants(sample, { count: 3, seed: 2 });
+      assert.notDeepStrictEqual(v1, v2);
+    });
+
+    it('should be non-deterministic when no seed is provided', () => {
+      const sample = { value: 1000 };
+      // Run many times — at least one pair should differ
+      const runs = Array.from({ length: 10 }, () =>
+        generateVariants(sample, { count: 1 })
+      );
+      const unique = new Set(runs.map(r => JSON.stringify(r)));
+      assert.ok(unique.size > 1, 'Expected non-deterministic output without seed');
     });
   });
 });

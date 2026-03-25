@@ -76,6 +76,80 @@ describe('Import Command', () => {
     });
   });
 
+  describe('YAML spec import', () => {
+    it('should import from valid YAML OpenAPI spec', async () => {
+      const tempDir = path.join(process.cwd(), 'temp-test-import-yaml');
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      const specPath = path.join(tempDir, 'test-api.yaml');
+      const yamlContent = `openapi: "3.0.0"
+info:
+  title: YAML Test API
+  version: "1.0.0"
+paths:
+  /items:
+    get:
+      operationId: getItems
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    label:
+                      type: string
+`;
+      fs.writeFileSync(specPath, yamlContent);
+
+      try {
+        const { stdout } = await execAsync(`cd ${tempDir} && node ${CLI_PATH} init && node ${CLI_PATH} import ${specPath}`);
+        assert.ok(stdout.includes('Importing fixtures'));
+        assert.ok(stdout.includes('YAML Test API'));
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should import from .yml extension', async () => {
+      const tempDir = path.join(process.cwd(), 'temp-test-import-yml');
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      const specPath = path.join(tempDir, 'api.yml');
+      const yamlContent = `openapi: "3.0.0"
+info:
+  title: YML API
+  version: "2.0.0"
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+`;
+      fs.writeFileSync(specPath, yamlContent);
+
+      try {
+        const { stdout } = await execAsync(`cd ${tempDir} && node ${CLI_PATH} init && node ${CLI_PATH} import ${specPath}`);
+        assert.ok(stdout.includes('Importing fixtures'));
+        assert.ok(stdout.includes('YML API'));
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
   describe('error handling', () => {
     it('should handle missing spec file', async () => {
       try {

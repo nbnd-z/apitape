@@ -191,8 +191,17 @@ function compareArrays(oldArr, newArr, path, result) {
  */
 export function diffObjects(oldObj, newObj) {
   // Parse if strings
-  const oldData = typeof oldObj === 'string' ? JSON.parse(oldObj) : oldObj;
-  const newData = typeof newObj === 'string' ? JSON.parse(newObj) : newObj;
+  let oldData, newData;
+  try {
+    oldData = typeof oldObj === 'string' ? JSON.parse(oldObj) : oldObj;
+  } catch (error) {
+    throw new Error(`Failed to parse old value as JSON: ${error.message}`);
+  }
+  try {
+    newData = typeof newObj === 'string' ? JSON.parse(newObj) : newObj;
+  } catch (error) {
+    throw new Error(`Failed to parse new value as JSON: ${error.message}`);
+  }
 
   const result = {
     added: [],

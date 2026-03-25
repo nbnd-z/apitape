@@ -3,9 +3,11 @@
  * @module core/fixture-store
  */
 
-import fs from 'fs';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 import { loadConfig } from './config.js';
+import { sanitizeName } from '../cli/utils.js';
 
 /**
  * @typedef {Object} FixtureMetadata
@@ -33,7 +35,7 @@ export async function getFixturesDir() {
 }
 
 /**
- * Get fixture file path
+ * Get fixture file paths
  * @param {string} name - Fixture name
  * @param {string} fixturesDir - Fixtures directory
  * @returns {Object} Object with dataPath and metaPath
@@ -47,20 +49,6 @@ function getFixturePaths(name, fixturesDir) {
 }
 
 /**
- * Sanitize fixture name for file system
- * @param {string} name - Original name
- * @returns {string} Sanitized name
- */
-function sanitizeName(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 100);
-}
-
-/**
  * Save a fixture
  * @param {string} name - Fixture name
  * @param {*} data - Fixture data
@@ -71,22 +59,21 @@ export async function saveFixture(name, data, metadata = {}) {
   const fixturesDir = await getFixturesDir();
 
   // Ensure directory exists
-  if (!fs.existsSync(fixturesDir)) {
-    fs.mkdirSync(fixturesDir, { recursive: true });
-  }
+  await fs.mkdir(fixturesDir, { recursive: true });
 
   const { dataPath, metaPath } = getFixturePaths(name, fixturesDir);
 
-  // Save data
-  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-
-  // Save metadata
+  // Save data and metadata in parallel
   const fullMetadata = {
     name,
     ...metadata,
     savedAt: new Date().toISOString()
   };
-  fs.writeFileSync(metaPath, JSON.stringify(fullMetadata, null, 2));
+
+  await Promise.all([
+    fs.writeFile(dataPath, JSON.stringify(data, null, 2)),
+    fs.writeFile(metaPath, JSON.stringify(fullMetadata, null, 2))
+  ]);
 }
 
 /**
@@ -98,12 +85,15 @@ export async function loadFixture(name) {
   const fixturesDir = await getFixturesDir();
   const { dataPath } = getFixturePaths(name, fixturesDir);
 
-  if (!fs.existsSync(dataPath)) {
-    throw new Error(`Fixture not found: ${name}`);
+  try {
+    const content = await fs.readFile(dataPath, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      throw new Error(`Fixture not found: ${name}`);
+    }
+    throw error;
   }
-
-  const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-  return data;
 }
 
 /**
@@ -115,11 +105,12 @@ export async function loadMetadata(name) {
   const fixturesDir = await getFixturesDir();
   const { metaPath } = getFixturePaths(name, fixturesDir);
 
-  if (!fs.existsSync(metaPath)) {
+  try {
+    const content = await fs.readFile(metaPath, 'utf-8');
+    return JSON.parse(content);
+  } catch {
     return null;
   }
-
-  return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
 }
 
 /**
@@ -134,28 +125,22 @@ export async function deleteFixture(name) {
 
   let deleted = false;
 
-  // Remove data file
-  if (fs.existsSync(dataPath)) {
-    fs.unlinkSync(dataPath);
-    deleted = true;
-  }
-
-  // Remove metadata
-  if (fs.existsSync(metaPath)) {
-    fs.unlinkSync(metaPath);
-  }
-
-  // Remove associated generated files
-  const associatedFiles = [
+  // Collect all files to remove
+  const filesToRemove = [
+    dataPath,
+    metaPath,
     path.join(fixturesDir, `${baseName}.d.ts`),
     path.join(fixturesDir, `${baseName}.types.js`),
     path.join(fixturesDir, `${baseName}.msw.js`)
   ];
 
-  for (const filePath of associatedFiles) {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+  const results = await Promise.allSettled(
+    filesToRemove.map(f => fs.unlink(f))
+  );
+
+  // If the main data file was deleted successfully, consider it deleted
+  if (results[0].status === 'fulfilled') {
+    deleted = true;
   }
 
   return deleted;
@@ -168,14 +153,17 @@ export async function deleteFixture(name) {
 export async function listFixtures() {
   const fixturesDir = await getFixturesDir();
 
-  if (!fs.existsSync(fixturesDir)) {
+  if (!existsSync(fixturesDir)) {
     return [];
   }
 
-  const files = fs.readdirSync(fixturesDir);
+  const files = await fs.readdir(fixturesDir);
   const fixtures = [];
 
   // Only consider .json files that have a matching .meta.json
+  const metaReadPromises = [];
+  const metaBaseNames = [];
+
   for (const file of files) {
     if (!file.endsWith('.json') || file.endsWith('.meta.json')) continue;
 
@@ -184,14 +172,16 @@ export async function listFixtures() {
 
     if (!files.includes(metaFile)) continue;
 
-    const metaPath = path.join(fixturesDir, metaFile);
-    try {
-      const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-      fixtures.push(metadata);
-    } catch {
-      fixtures.push({ name: baseName, capturedAt: null, url: null });
-    }
+    metaBaseNames.push(baseName);
+    metaReadPromises.push(
+      fs.readFile(path.join(fixturesDir, metaFile), 'utf-8')
+        .then(content => JSON.parse(content))
+        .catch(() => ({ name: baseName, capturedAt: null, url: null }))
+    );
   }
+
+  const metaResults = await Promise.all(metaReadPromises);
+  fixtures.push(...metaResults);
 
   // Sort by capturedAt descending
   fixtures.sort((a, b) => {
@@ -211,5 +201,11 @@ export async function listFixtures() {
 export async function fixtureExists(name) {
   const fixturesDir = await getFixturesDir();
   const { dataPath } = getFixturePaths(name, fixturesDir);
-  return fs.existsSync(dataPath);
+
+  try {
+    await fs.access(dataPath);
+    return true;
+  } catch {
+    return false;
+  }
 }

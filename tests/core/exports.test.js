@@ -37,9 +37,14 @@ describe('Public API exports', () => {
     // Mock generation
     assert.strictEqual(typeof api.generateMockData, 'function');
     assert.strictEqual(typeof api.generateVariants, 'function');
+    assert.strictEqual(typeof api.createRng, 'function');
 
     // MSW
     assert.strictEqual(typeof api.generateMSW, 'function');
     assert.strictEqual(typeof api.generateMSWHandlers, 'function');
+
+    // Artifacts
+    assert.strictEqual(typeof api.generateArtifacts, 'function');
+    assert.strictEqual(typeof api.regenerateExistingArtifacts, 'function');
   });
 });

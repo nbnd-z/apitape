@@ -20,6 +20,18 @@ import { deleteCommand } from './commands/delete.js';
 const require = createRequire(import.meta.url);
 const { version } = require('../../package.json');
 
+/**
+ * Wrap a command handler so that a non-zero return value triggers process.exit.
+ * @param {Function} fn - Async command handler returning an exit code
+ * @returns {Function} Wrapped handler
+ */
+function withExitCode(fn) {
+  return async (...args) => {
+    const code = await fn(...args);
+    if (code) process.exit(code);
+  };
+}
+
 program
   .name('apitape')
   .description('Record real API responses as test fixtures. Auto-generate types, MSW handlers, and detect API drift.')
@@ -30,7 +42,7 @@ program
   .description('Initialize a new fixtures directory with config')
   .option('-f, --force', 'Overwrite existing config')
   .option('--no-gitignore', 'Do not update .gitignore')
-  .action(initCommand);
+  .action(withExitCode(initCommand));
 
 program
   .command('capture <url>')
@@ -45,20 +57,20 @@ program
   .option('--typescript', 'Generate TypeScript types file (.d.ts)')
   .option('--msw', 'Generate MSW handler file (.msw.js)')
   .option('--allow-error', 'Capture non-2xx responses (e.g. 404, 500)')
-  .action(captureCommand);
+  .action(withExitCode(captureCommand));
 
 program
   .command('types')
   .description('Generate types from all fixtures')
   .option('-f, --format <format>', 'Output format: jsdoc, typescript (default: jsdoc)')
   .option('-o, --output <dir>', 'Output directory')
-  .action(typesCommand);
+  .action(withExitCode(typesCommand));
 
 program
   .command('list')
   .description('List all fixtures with metadata')
   .option('-j, --json', 'Output as JSON')
-  .action(listCommand);
+  .action(withExitCode(listCommand));
 
 program
   .command('diff')
@@ -67,10 +79,7 @@ program
   .option('--config <path>', 'Config file path')
   .option('--fail-on-drift', 'Exit with error code if drift detected')
   .option('-j, --json', 'Output as JSON')
-  .action(async (...args) => {
-    const code = await diffCommand(...args);
-    if (code) process.exit(code);
-  });
+  .action(withExitCode(diffCommand));
 
 program
   .command('sync')
@@ -79,24 +88,18 @@ program
   .option('--config <path>', 'Config file path')
   .option('--dry-run', 'Show what would be synced without making changes')
   .option('--force', 'Force re-capture even if unchanged')
-  .action(async (...args) => {
-    const code = await syncCommand(...args);
-    if (code) process.exit(code);
-  });
+  .action(withExitCode(syncCommand));
 
 program
   .command('import <spec>')
-  .description('Import fixtures from OpenAPI specification')
+  .description('Import fixtures from OpenAPI specification (JSON or YAML)')
   .option('-e, --env <environment>', 'Environment name for URL resolution')
   .option('--config <path>', 'Config file path')
   .option('--jsdoc', 'Generate JSDoc types for imported fixtures')
   .option('--typescript', 'Generate TypeScript types for imported fixtures')
   .option('--msw', 'Generate MSW handlers for imported fixtures')
   .option('--mock', 'Generate mock data from schema')
-  .action(async (...args) => {
-    const code = await importCommand(...args);
-    if (code) process.exit(code);
-  });
+  .action(withExitCode(importCommand));
 
 program
   .command('mock <name>')
@@ -104,18 +107,18 @@ program
   .option('-c, --count <number>', 'Number of variants to generate', '3')
   .option('-o, --output <prefix>', 'Output name prefix')
   .option('--all', 'Generate mocks for all fixtures')
+  .option('--seed <number>', 'Seed for deterministic output (reproducible mocks)')
   .option('--jsdoc', 'Generate JSDoc types for mock variants')
   .option('--typescript', 'Generate TypeScript types for mock variants')
   .option('--msw', 'Generate MSW handlers for mock variants')
   .option('--vary <fields...>', 'Fields to vary (comma-separated)')
-  .action(mockCommand);
+  .action(withExitCode(mockCommand));
 
 program
   .command('delete <name>')
   .description('Delete a fixture and its associated files')
-  .action(deleteCommand);
+  .action(withExitCode(deleteCommand));
 
-// Alias for mock --all
 program
   .command('mock:all')
   .description('Generate mock variants for all fixtures')
@@ -123,6 +126,6 @@ program
   .option('--jsdoc', 'Generate JSDoc types')
   .option('--typescript', 'Generate TypeScript types')
   .option('--msw', 'Generate MSW handlers')
-  .action(mockAllCommand);
+  .action(withExitCode(mockAllCommand));
 
 program.parse();

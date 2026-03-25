@@ -21,5 +21,45 @@ describe('Config', () => {
       const result = resolveEnv('https://api.example.com/users', 'staging', config);
       assert.strictEqual(result, 'https://api.example.com/users');
     });
+
+    it('should prepend baseUrl for relative URLs', () => {
+      const config = {
+        environments: {
+          staging: { baseUrl: 'https://staging.api.example.com' }
+        }
+      };
+      const result = resolveEnv('/users', 'staging', config);
+      assert.strictEqual(result, 'https://staging.api.example.com/users');
+    });
+
+    it('should strip trailing slash from baseUrl before prepending', () => {
+      const config = {
+        environments: {
+          staging: { baseUrl: 'https://staging.api.example.com/' }
+        }
+      };
+      const result = resolveEnv('/users', 'staging', config);
+      assert.strictEqual(result, 'https://staging.api.example.com/users');
+    });
+
+    it('should return URL unchanged when envName is null', () => {
+      const config = {
+        environments: {
+          staging: { baseUrl: 'https://staging.api.example.com' }
+        }
+      };
+      const result = resolveEnv('https://api.example.com/users', null, config);
+      assert.strictEqual(result, 'https://api.example.com/users');
+    });
+
+    it('should replace placeholders in URL', () => {
+      const config = {
+        environments: {
+          staging: { baseUrl: 'https://staging.example.com', apiVersion: 'v2' }
+        }
+      };
+      const result = resolveEnv('https://api.example.com/{apiVersion}/users', 'staging', config);
+      assert.strictEqual(result, 'https://api.example.com/v2/users');
+    });
   });
 });

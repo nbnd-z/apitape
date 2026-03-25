@@ -19,7 +19,10 @@ export { inferType, generateJSDoc, generateTypeScript, generateType } from './co
 export { diffObjects, formatDiffResult } from './core/differ.js';
 
 // Mock generation
-export { generateMockData, generateVariants } from './core/mock-generator.js';
+export { generateMockData, generateVariants, createRng } from './core/mock-generator.js';
 
 // MSW
 export { generateMSW, generateMSWHandlers } from './formatters/msw.js';
+
+// Artifacts
+export { generateArtifacts, regenerateExistingArtifacts } from './core/artifacts.js';

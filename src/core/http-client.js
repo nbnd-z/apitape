@@ -106,6 +106,16 @@ export async function fetchWithAuth(url, options = {}) {
 }
 
 /**
+ * Sanitise a header value by stripping characters that could enable header injection.
+ * @param {string} value - Raw header value
+ * @returns {string} Sanitised value
+ */
+function sanitizeHeaderValue(value) {
+  // Strip carriage returns, newlines, and null bytes
+  return String(value).replace(/[\r\n\0]/g, '');
+}
+
+/**
  * Build auth header from auth options
  * @param {AuthOptions} auth - Auth options
  * @returns {Object|null} Auth header object
@@ -113,41 +123,22 @@ export async function fetchWithAuth(url, options = {}) {
 function buildAuthHeader(auth) {
   if (!auth || !auth.token) return null;
 
+  const token = sanitizeHeaderValue(auth.token);
+
   switch (auth.type) {
     case 'bearer':
       return {
         name: 'Authorization',
-        value: `Bearer ${auth.token}`
+        value: `Bearer ${token}`
       };
 
     case 'api-key':
       return {
         name: auth.header || 'X-API-Key',
-        value: auth.token
+        value: token
       };
 
     default:
       return null;
   }
-}
-
-/**
- * Simple GET request helper
- * @param {string} url - URL to fetch
- * @param {Object} [headers] - Additional headers
- * @returns {Promise<FetchResponse>} Response object
- */
-export async function get(url, headers = {}) {
-  return fetchWithAuth(url, { method: 'GET', headers });
-}
-
-/**
- * Simple POST request helper
- * @param {string} url - URL to post to
- * @param {Object} body - Request body
- * @param {Object} [headers] - Additional headers
- * @returns {Promise<FetchResponse>} Response object
- */
-export async function post(url, body, headers = {}) {
-  return fetchWithAuth(url, { method: 'POST', headers, body });
 }

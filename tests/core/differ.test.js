@@ -151,6 +151,20 @@ describe('Differ', () => {
         
         assert.strictEqual(result.changed.length, 1);
       });
+
+      it('should throw on invalid JSON string for old value', () => {
+        assert.throws(
+          () => diffObjects('not valid json', { a: 1 }),
+          /Failed to parse old value as JSON/
+        );
+      });
+
+      it('should throw on invalid JSON string for new value', () => {
+        assert.throws(
+          () => diffObjects({ a: 1 }, '{broken'),
+          /Failed to parse new value as JSON/
+        );
+      });
     });
 
     describe('null handling', () => {

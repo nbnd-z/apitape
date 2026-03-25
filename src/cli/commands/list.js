@@ -6,14 +6,10 @@
 import { listFixtures } from '../../core/fixture-store.js';
 
 /**
- * @typedef {Object} ListOptions
- * @property {boolean} json - Output as JSON
- */
-
-/**
  * List all fixtures with metadata
- * @param {ListOptions} options - Command options
- * @returns {Promise<void>}
+ * @param {Object} options - Command options
+ * @param {boolean} options.json - Output as JSON
+ * @returns {Promise<number>} Exit code
  */
 export async function listCommand(options = {}) {
   try {
@@ -21,12 +17,12 @@ export async function listCommand(options = {}) {
 
     if (fixtures.length === 0) {
       console.log('No fixtures found.');
-      return;
+      return 0;
     }
 
     if (options.json) {
       console.log(JSON.stringify(fixtures, null, 2));
-      return;
+      return 0;
     }
 
     console.log('Fixtures:\n');
@@ -35,7 +31,7 @@ export async function listCommand(options = {}) {
 
     for (const fixture of fixtures) {
       const name = fixture.name.substring(0, 28);
-      const capturedAt = fixture.capturedAt 
+      const capturedAt = fixture.capturedAt
         ? new Date(fixture.capturedAt).toLocaleString()
         : 'N/A';
       const url = fixture.url || 'N/A';
@@ -44,9 +40,9 @@ export async function listCommand(options = {}) {
     }
 
     console.log(`\nTotal: ${fixtures.length} fixture(s)`);
-
+    return 0;
   } catch (error) {
     console.error(`✗ Error: ${error.message}`);
-    process.exit(1);
+    return 1;
   }
 }

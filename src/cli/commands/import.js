@@ -5,16 +5,16 @@
 
 import fs from 'fs';
 import path from 'path';
+import { parseYaml } from '../../core/yaml-parser.js';
 import { loadConfig } from '../../core/config.js';
 import { saveFixture, getFixturesDir } from '../../core/fixture-store.js';
-import { generateJSDoc, generateTypeScript } from '../../core/generator.js';
-import { generateMSW } from '../../formatters/msw.js';
 import { generateMockData } from '../../core/mock-generator.js';
-import { toPascalCase, sanitizeName } from '../utils.js';
+import { generateArtifacts } from '../../core/artifacts.js';
+import { sanitizeName } from '../utils.js';
 
 /**
  * Import fixtures from OpenAPI specification
- * @param {string} specPath - Path to OpenAPI spec file (JSON only)
+ * @param {string} specPath - Path to OpenAPI spec file (JSON or YAML)
  * @param {Object} options - Command options
  * @param {string} options.env - Environment name for URL resolution
  * @param {boolean} options.jsdoc - Generate JSDoc types
@@ -30,14 +30,14 @@ export async function importCommand(specPath, options = {}) {
     const spec = loadOpenAPISpec(specPath);
 
     if (!spec) {
-      console.error('Failed to parse OpenAPI specification. Only JSON format is supported.');
+      console.error('Failed to parse OpenAPI specification. Supported formats: JSON, YAML.');
       return 1;
     }
 
     console.log(`API: ${spec.info?.title || 'Unknown'} v${spec.info?.version || '0.0.0'}`);
     console.log(`Endpoints found: ${countEndpoints(spec.paths || {})}\n`);
 
-    const config = await loadConfig(options.config);
+    await loadConfig(options.config);
     const fixturesDir = await getFixturesDir();
 
     const results = [];
@@ -81,25 +81,13 @@ export async function importCommand(specPath, options = {}) {
             operationId
           });
 
-          if (options.typescript) {
-            const typeContent = generateTypeScript(data, toPascalCase(fixtureName));
-            fs.writeFileSync(path.join(fixturesDir, `${fixtureName}.d.ts`), typeContent + '\n');
-          }
-
-          if (options.jsdoc) {
-            const typeContent = generateJSDoc(data, toPascalCase(fixtureName));
-            const jsdocContent = `// Auto-generated JSDoc types for ${fixtureName}\n${typeContent}\n\nexport const ${fixtureName} = require('./${fixtureName}.json');\n`;
-            fs.writeFileSync(path.join(fixturesDir, `${fixtureName}.types.js`), jsdocContent);
-          }
-
-          if (options.msw) {
-            const mswContent = generateMSW({
-              name: fixtureName,
-              url: pathStr,
-              method: method.toUpperCase()
-            });
-            fs.writeFileSync(path.join(fixturesDir, `${fixtureName}.msw.js`), mswContent);
-          }
+          await generateArtifacts(
+            fixtureName,
+            data,
+            { jsdoc: options.jsdoc, typescript: options.typescript, msw: options.msw },
+            { url: pathStr, method: method.toUpperCase() },
+            fixturesDir
+          );
 
           console.log(`  ✓ Imported\n`);
           imported++;
@@ -124,16 +112,26 @@ export async function importCommand(specPath, options = {}) {
 }
 
 /**
- * Load and parse OpenAPI specification (JSON only)
+ * Load and parse OpenAPI specification (JSON or YAML)
  * @param {string} specPath - Path to spec file
  * @returns {Object|null} Parsed spec or null
  */
 function loadOpenAPISpec(specPath) {
   const content = fs.readFileSync(specPath, 'utf-8');
+  const ext = path.extname(specPath).toLowerCase();
+
   try {
+    if (ext === '.yaml' || ext === '.yml') {
+      return parseYaml(content);
+    }
     return JSON.parse(content);
   } catch {
-    return null;
+    // Fallback: try the other format
+    try {
+      return ext === '.json' ? parseYaml(content) : JSON.parse(content);
+    } catch {
+      return null;
+    }
   }
 }
 

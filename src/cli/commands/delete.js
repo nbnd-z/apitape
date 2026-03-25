@@ -9,8 +9,7 @@ import { deleteFixture, fixtureExists } from '../../core/fixture-store.js';
  * Delete a fixture by name
  * @param {string} name - Fixture name
  * @param {Object} options - Command options
- * @param {boolean} options.force - Skip confirmation
- * @returns {Promise<void>}
+ * @returns {Promise<number>} Exit code
  */
 export async function deleteCommand(name, options = {}) {
   try {
@@ -18,19 +17,20 @@ export async function deleteCommand(name, options = {}) {
 
     if (!exists) {
       console.error(`Fixture not found: ${name}`);
-      process.exit(1);
+      return 1;
     }
 
     const deleted = await deleteFixture(name);
 
     if (deleted) {
       console.log(`✓ Deleted fixture: ${name}`);
+      return 0;
     } else {
       console.error(`✗ Failed to delete fixture: ${name}`);
-      process.exit(1);
+      return 1;
     }
   } catch (error) {
     console.error(`✗ Error: ${error.message}`);
-    process.exit(1);
+    return 1;
   }
 }
