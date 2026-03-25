@@ -1,8 +1,7 @@
 # apitape
 
-[![npm version](https://img.shields.io/npm/v/apitape)](https://www.npmjs.com/package/apitape)
-[![license](https://img.shields.io/npm/l/apitape)](https://github.com/nbnd-z/apitape/blob/main/LICENSE)
-[![node](https://img.shields.io/node/v/apitape)](https://nodejs.org)
+[![license](https://img.shields.io/github/license/nbnd-z/apitape)](https://github.com/nbnd-z/apitape/blob/main/LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 
 Record real API responses as test fixtures with auto-generated types and MSW handlers — then detect drift before your tests break.
 
@@ -42,7 +41,7 @@ import → generate fixtures from OpenAPI spec
 ## Installation
 
 ```bash
-npm install apitape
+npm install api-tape
 ```
 
 ## Quick Start
@@ -313,7 +312,7 @@ import {
   generateMSW, generateMSWHandlers,
   // Artifact generation (types + MSW in one call)
   generateArtifacts, regenerateExistingArtifacts
-} from 'apitape';
+} from 'api-tape';
 ```
 
 ### Example

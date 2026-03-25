@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-25
+
+### Changed
+- Renamed npm package from `apitape` to `api-tape` (CLI command remains `apitape`)
+- Replaced `js-yaml` dependency with built-in zero-dependency YAML parser
+- Removed dead code: unused formatter wrappers (`formatters/jsdoc.js`, `formatters/typescript.js`) and unused `get()`/`post()` helpers from `http-client.js`
+- Switched README badges from npm-based to GitHub-based (license, node version)
+
 ## [0.2.0] - 2026-03-25
 
 ### Added
