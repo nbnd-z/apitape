@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-26
+
+### Added
+- `export` command — bundle all MSW handlers into a single `handlers.js` file
+- Fixture tagging — `capture --tag auth --tag v2`, filter with `list/diff/sync/export --tag`
+- Auto-name from URL — `capture` no longer requires `--name`, derives name from URL path
+- `--data` / `-d` option for `capture` — send request body as JSON string or `@file.json`
+- `mock --all` flag — routes to mockAllCommand; `mock:all` kept as backward-compatible alias
+- `--name` filter for `diff` and `sync` — target a single fixture
+- `sync --backup` — backup existing fixtures before overwriting
+- `delete --force` — skip confirmation prompt (was in code but not exposed in CLI)
+- `pAll` concurrency utility exported from public API
+- Config validation on load — validates `fixturesDir`, `maxSizeBytes`, `arraySampleSize`, `typesFormat`, `auth`
+
+### Changed
+- `capture` shows "Updated" vs "Saved" when overwriting an existing fixture
+- `singularize()` improved — handles addresses, categories, wolves, children, status, etc.
+- `config.arraySampleSize` now wired into differ (was hardcoded to 5)
+- Diff results split `changed` into `typeChanged` and `valueChanged` for clearer reports
+- `list` output now includes Tags column
+
+### Fixed
+- `@file.json` data parsing no longer silently falls back to raw string on invalid JSON
+- `arg-parser` defaults now use camelCase key consistently (was checking kebab-case, causing defaults to overwrite user values)
+- `--count` coerced to `Number()` in mock commands (was string, `count === 1` never matched)
+
+### Removed
+- Dead code: `formatBytes`, `isValidFixtureName`, `slugify` from `cli/utils.js` (unused)
+- Redundant `toPascalCase`/`sanitizeName` re-exports from `cli/utils.js`
+- Duplicated `pAll` from `diff.js` and `sync.js` (moved to `core/utils.js`)
+
+### Docs
+- README fully rewritten with new tagline, all new commands/options, tagging section, updated programmatic API
+
 ## [0.2.3] - 2026-03-26
 
 ### Fixed
