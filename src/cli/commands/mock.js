@@ -21,7 +21,8 @@ import { generateArtifacts } from '../../core/artifacts.js';
  * @returns {Promise<number>} Exit code
  */
 export async function mockCommand(name, options = {}) {
-  const { count = 3, output, vary = [], seed } = options;
+  const { count: rawCount = 3, output, vary = [], seed } = options;
+  const count = Number(rawCount);
   const parsedSeed = seed != null ? Number(seed) : null;
 
   console.log(`Generating mock variants from fixture: ${name}\n`);
@@ -81,7 +82,8 @@ export async function mockCommand(name, options = {}) {
  * @returns {Promise<number>} Exit code
  */
 export async function mockAllCommand(options = {}) {
-  const { count = 3 } = options;
+  const { count: rawCount = 3 } = options;
+  const count = Number(rawCount);
 
   console.log('Generating mock variants for all fixtures...\n');
 
