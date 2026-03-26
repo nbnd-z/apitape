@@ -20,7 +20,8 @@ export function setDiffArraySampleSize(size) {
  * @typedef {Object} DiffResult
  * @property {Array<{path: string, type: string}>} added - Added fields
  * @property {Array<{path: string, type: string}>} removed - Removed fields
- * @property {Array<{path: string, oldType: string, newType: string}>} changed - Type changes
+ * @property {Array<{path: string, oldType: string, newType: string}>} typeChanged - Type changes
+ * @property {Array<{path: string, oldValue: *, newValue: *}>} valueChanged - Value changes (same type)
  * @property {'fresh'|'drifted'|'breaking'} status - Overall status
  */
 
@@ -55,7 +56,7 @@ function compareValues(oldObj, newObj, path, result) {
   const newType = getType(newObj);
 
   if (oldType !== newType) {
-    result.changed.push({ path, oldType, newType });
+    result.typeChanged.push({ path, oldType, newType });
     if (isBreakingChange(oldType, newType)) {
       result.status = 'breaking';
     } else if (result.status === 'fresh') {
@@ -75,7 +76,7 @@ function compareValues(oldObj, newObj, path, result) {
   }
 
   if (oldObj !== newObj) {
-    result.changed.push({ path, oldType, newType, oldValue: oldObj, newValue: newObj });
+    result.valueChanged.push({ path, type: oldType, oldValue: oldObj, newValue: newObj });
     if (result.status === 'fresh') {
       result.status = 'drifted';
     }
@@ -159,10 +160,10 @@ export function diffObjects(oldObj, newObj) {
 
   // Quick hash check for identical objects
   if (hashValue(oldData) === hashValue(newData)) {
-    return { added: [], removed: [], changed: [], status: 'fresh' };
+    return { added: [], removed: [], typeChanged: [], valueChanged: [], status: 'fresh' };
   }
 
-  const result = { added: [], removed: [], changed: [], status: 'fresh' };
+  const result = { added: [], removed: [], typeChanged: [], valueChanged: [], status: 'fresh' };
   compareValues(oldData, newData, '', result);
   return result;
 }
@@ -192,10 +193,17 @@ export function formatDiffResult(diff) {
       }
     }
 
-    if (diff.changed.length > 0) {
-      lines.push(`  Type changes (${diff.changed.length}):`);
-      for (const item of diff.changed) {
+    if (diff.typeChanged.length > 0) {
+      lines.push(`  Type changes (${diff.typeChanged.length}):`);
+      for (const item of diff.typeChanged) {
         lines.push(`    ! ${item.path}: ${item.oldType} → ${item.newType} (TYPE_CHANGED)`);
+      }
+    }
+
+    if (diff.valueChanged.length > 0) {
+      lines.push(`  Value changes (${diff.valueChanged.length}):`);
+      for (const item of diff.valueChanged) {
+        lines.push(`    ~ ${item.path}: ${item.oldValue} → ${item.newValue} (VALUE_CHANGED)`);
       }
     }
 

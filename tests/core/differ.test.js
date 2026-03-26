@@ -16,7 +16,8 @@ describe('Differ', () => {
         assert.strictEqual(result.status, 'fresh');
         assert.strictEqual(result.added.length, 0);
         assert.strictEqual(result.removed.length, 0);
-        assert.strictEqual(result.changed.length, 0);
+        assert.strictEqual(result.typeChanged.length, 0);
+        assert.strictEqual(result.valueChanged.length, 0);
       });
     });
 
@@ -69,10 +70,10 @@ describe('Differ', () => {
         const newObj = { count: '123' };
         const result = diffObjects(oldObj, newObj);
         
-        assert.strictEqual(result.changed.length, 1);
-        assert.strictEqual(result.changed[0].path, 'count');
-        assert.strictEqual(result.changed[0].oldType, 'number');
-        assert.strictEqual(result.changed[0].newType, 'string');
+        assert.strictEqual(result.typeChanged.length, 1);
+        assert.strictEqual(result.typeChanged[0].path, 'count');
+        assert.strictEqual(result.typeChanged[0].oldType, 'number');
+        assert.strictEqual(result.typeChanged[0].newType, 'string');
       });
 
       it('should detect object to array as breaking', () => {
@@ -113,7 +114,7 @@ describe('Differ', () => {
         const result = diffObjects(oldObj, newObj);
         
         // Count all changes in the result
-        const totalChanges = result.changed.length;
+        const totalChanges = result.valueChanged.length;
         assert.ok(totalChanges >= 1);
       });
     });
@@ -149,7 +150,7 @@ describe('Differ', () => {
       it('should parse JSON strings', () => {
         const result = diffObjects('{"a":1}', '{"a":2}');
         
-        assert.strictEqual(result.changed.length, 1);
+        assert.strictEqual(result.valueChanged.length, 1);
       });
 
       it('should throw on invalid JSON string for old value', () => {
@@ -173,8 +174,8 @@ describe('Differ', () => {
         const newObj = { value: 'not null' };
         const result = diffObjects(oldObj, newObj);
         
-        assert.strictEqual(result.changed.length, 1);
-        assert.strictEqual(result.changed[0].oldType, 'null');
+        assert.strictEqual(result.typeChanged.length, 1);
+        assert.strictEqual(result.typeChanged[0].oldType, 'null');
       });
 
       it('should treat null as type change', () => {
@@ -203,7 +204,7 @@ describe('Differ', () => {
 
   describe('formatDiffResult', () => {
     it('should format fresh result', () => {
-      const result = { status: 'fresh', added: [], removed: [], changed: [] };
+      const result = { status: 'fresh', added: [], removed: [], typeChanged: [], valueChanged: [] };
       const formatted = formatDiffResult(result);
       
       assert.ok(formatted.includes('✓ No changes detected'));
@@ -214,7 +215,8 @@ describe('Differ', () => {
         status: 'drifted',
         added: [{ path: 'newField', type: 'string' }],
         removed: [],
-        changed: []
+        typeChanged: [],
+        valueChanged: []
       };
       const formatted = formatDiffResult(result);
       
@@ -227,7 +229,8 @@ describe('Differ', () => {
         status: 'breaking',
         added: [],
         removed: [{ path: 'oldField', type: 'string' }],
-        changed: []
+        typeChanged: [],
+        valueChanged: []
       };
       const formatted = formatDiffResult(result);
       
@@ -240,11 +243,25 @@ describe('Differ', () => {
         status: 'breaking',
         added: [],
         removed: [],
-        changed: [{ path: 'count', oldType: 'number', newType: 'string' }]
+        typeChanged: [{ path: 'count', oldType: 'number', newType: 'string' }],
+        valueChanged: []
       };
       const formatted = formatDiffResult(result);
       
       assert.ok(formatted.includes('! count: number → string (TYPE_CHANGED)'));
+    });
+
+    it('should format value changes', () => {
+      const result = {
+        status: 'drifted',
+        added: [],
+        removed: [],
+        typeChanged: [],
+        valueChanged: [{ path: 'name', type: 'string', oldValue: 'John', newValue: 'Jane' }]
+      };
+      const formatted = formatDiffResult(result);
+      
+      assert.ok(formatted.includes('~ name: John → Jane (VALUE_CHANGED)'));
     });
   });
 });

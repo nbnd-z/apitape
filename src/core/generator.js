@@ -115,14 +115,27 @@ function capitalize(s) {
 }
 
 /**
- * Naive singularize: strip trailing 's' for type naming
- * @param {string} s
- * @returns {string}
+ * Singularize a word for type naming.
+ * Handles common English plural patterns without external dependencies.
+ * @param {string} s - Plural word
+ * @returns {string} Singular form
  */
 function singularize(s) {
-  if (s.endsWith('ies')) return s.slice(0, -3) + 'y';
-  if (s.endsWith('ses') || s.endsWith('xes') || s.endsWith('zes')) return s.slice(0, -2);
-  if (s.endsWith('s') && !s.endsWith('ss')) return s.slice(0, -1);
+  if (s.length <= 2) return s;
+  // Irregular common API words
+  const irregulars = { children: 'child', people: 'person', men: 'man', women: 'woman', mice: 'mouse', data: 'datum', indices: 'index', vertices: 'vertex', matrices: 'matrix' };
+  const lower = s.toLowerCase();
+  if (irregulars[lower]) return s.charAt(0) + irregulars[lower].slice(1);
+  // -ies → -y (categories → category)
+  if (s.endsWith('ies') && s.length > 4) return s.slice(0, -3) + 'y';
+  // -ves → -f/-fe (wolves → wolf, knives → knife)
+  if (s.endsWith('ves')) return s.slice(0, -3) + 'f';
+  // -ches, -shes, -sses, -xes, -zes → drop -es (addresses → address, boxes → box)
+  if (/(?:ch|sh|ss|x|z)es$/i.test(s)) return s.slice(0, -2);
+  // -ses (responses → response, but not "ses" itself)
+  if (s.endsWith('ses') && s.length > 4) return s.slice(0, -1);
+  // -s but not -ss, -us, -is (users → user, but status → status)
+  if (s.endsWith('s') && !s.endsWith('ss') && !s.endsWith('us') && !s.endsWith('is')) return s.slice(0, -1);
   return s;
 }
 

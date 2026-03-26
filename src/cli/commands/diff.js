@@ -6,7 +6,7 @@
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, loadMetadata } from '../../core/fixture-store.js';
-import { diffObjects, formatDiffResult } from '../../core/differ.js';
+import { diffObjects, formatDiffResult, setDiffArraySampleSize } from '../../core/differ.js';
 
 /**
  * Concurrency-limited Promise.all
@@ -42,6 +42,9 @@ export async function diffCommand(options = {}) {
 
   try {
     const config = await loadConfig(options.config);
+    if (config.arraySampleSize) {
+      setDiffArraySampleSize(config.arraySampleSize);
+    }
     let fixtures = await listFixtures();
 
     if (filterName) {
