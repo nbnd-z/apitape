@@ -7,25 +7,7 @@ import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, loadMetadata } from '../../core/fixture-store.js';
 import { diffObjects, formatDiffResult, setDiffArraySampleSize } from '../../core/differ.js';
-
-/**
- * Concurrency-limited Promise.all
- * @param {Array<Function>} tasks - Array of () => Promise
- * @param {number} limit - Concurrency limit
- * @returns {Promise<Array>}
- */
-async function pAll(tasks, limit) {
-  const results = new Array(tasks.length);
-  let idx = 0;
-  async function run() {
-    while (idx < tasks.length) {
-      const i = idx++;
-      results[i] = await tasks[i]();
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
-  return results;
-}
+import { pAll } from '../../core/utils.js';
 
 /**
  * Compare all fixtures against live API

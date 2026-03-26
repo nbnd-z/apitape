@@ -31,20 +31,21 @@ export async function captureCommand(url, options = {}) {
     // Parse --data body
     let body = null;
     if (options.data) {
-      try {
-        if (options.data.startsWith('@')) {
-          const filePath = options.data.slice(1);
+      if (options.data.startsWith('@')) {
+        const filePath = options.data.slice(1);
+        try {
           const fileContent = await fs.readFile(filePath, 'utf-8');
           body = JSON.parse(fileContent);
-        } else {
-          body = JSON.parse(options.data);
-        }
-      } catch (err) {
-        if (options.data.startsWith('@')) {
-          console.error(`✗ Failed to read data file: ${err.message}`);
+        } catch (err) {
+          console.error(`✗ Failed to read/parse data file "${filePath}": ${err.message}`);
           return 1;
         }
-        body = options.data;
+      } else {
+        try {
+          body = JSON.parse(options.data);
+        } catch {
+          body = options.data;
+        }
       }
     }
 

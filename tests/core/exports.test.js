@@ -62,5 +62,6 @@ describe('Public API exports', () => {
     // Core utils
     assert.strictEqual(typeof api.sanitizeName, 'function');
     assert.strictEqual(typeof api.toPascalCase, 'function');
+    assert.strictEqual(typeof api.pAll, 'function');
   });
 });

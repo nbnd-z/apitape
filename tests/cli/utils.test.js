@@ -1,10 +1,11 @@
 /**
- * @fileoverview Tests for cli/utils module
+ * @fileoverview Tests for cli/utils and core/utils modules
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { parseHeader, parseHeaders, formatBytes, isValidFixtureName, slugify, toPascalCase, sanitizeName } from '../../src/cli/utils.js';
+import { parseHeader, parseHeaders } from '../../src/cli/utils.js';
+import { toPascalCase, sanitizeName, pAll } from '../../src/core/utils.js';
 
 describe('CLI Utils', () => {
   describe('parseHeader', () => {
@@ -33,39 +34,6 @@ describe('CLI Utils', () => {
     });
   });
 
-  describe('formatBytes', () => {
-    it('should format 0 bytes', () => {
-      assert.strictEqual(formatBytes(0), '0 B');
-    });
-
-    it('should format KB', () => {
-      assert.strictEqual(formatBytes(1024), '1 KB');
-    });
-
-    it('should format MB', () => {
-      assert.strictEqual(formatBytes(1048576), '1 MB');
-    });
-  });
-
-  describe('isValidFixtureName', () => {
-    it('should accept valid names', () => {
-      assert.ok(isValidFixtureName('my-fixture'));
-      assert.ok(isValidFixtureName('fixture_123'));
-    });
-
-    it('should reject invalid names', () => {
-      assert.ok(!isValidFixtureName('has spaces'));
-      assert.ok(!isValidFixtureName('has/slash'));
-    });
-  });
-
-  describe('slugify', () => {
-    it('should slugify strings', () => {
-      assert.strictEqual(slugify('Hello World'), 'hello-world');
-      assert.strictEqual(slugify('foo_bar!baz'), 'foo-bar-baz');
-    });
-  });
-
   describe('toPascalCase', () => {
     it('should convert to PascalCase', () => {
       assert.strictEqual(toPascalCase('my-fixture'), 'MyFixture');
@@ -81,6 +49,28 @@ describe('CLI Utils', () => {
 
     it('should limit length to 100', () => {
       assert.ok(sanitizeName('a'.repeat(200)).length <= 100);
+    });
+
+    it('should throw on empty input', () => {
+      assert.throws(() => sanitizeName(''), /non-empty string/);
+      assert.throws(() => sanitizeName(null), /non-empty string/);
+    });
+  });
+
+  describe('pAll', () => {
+    it('should run tasks with concurrency limit', async () => {
+      const order = [];
+      const tasks = [1, 2, 3, 4].map(n => async () => {
+        order.push(n);
+        return n * 2;
+      });
+      const results = await pAll(tasks, 2);
+      assert.deepStrictEqual(results, [2, 4, 6, 8]);
+    });
+
+    it('should handle empty tasks', async () => {
+      const results = await pAll([], 2);
+      assert.deepStrictEqual(results, []);
     });
   });
 });

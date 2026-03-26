@@ -158,17 +158,4 @@ cli.command({
   action: withExitCode(deleteCommand)
 });
 
-cli.command({
-  name: 'mock:all',
-  description: 'Generate mock variants for all fixtures',
-  positional: null,
-  options: [
-    { short: '-c', long: '--count', description: 'Number of variants per fixture', type: 'string', defaultValue: '3' },
-    { short: null, long: '--jsdoc', description: 'Generate JSDoc types', type: 'boolean' },
-    { short: null, long: '--typescript', description: 'Generate TypeScript types', type: 'boolean' },
-    { short: null, long: '--msw', description: 'Generate MSW handlers', type: 'boolean' }
-  ],
-  action: withExitCode(mockAllCommand)
-});
-
 cli.run();

@@ -36,3 +36,22 @@ export function sanitizeName(name) {
   }
   return sanitized;
 }
+
+/**
+ * Concurrency-limited Promise.all
+ * @param {Array<Function>} tasks - Array of () => Promise
+ * @param {number} limit - Concurrency limit
+ * @returns {Promise<Array>} Results in original order
+ */
+export async function pAll(tasks, limit) {
+  const results = new Array(tasks.length);
+  let idx = 0;
+  async function run() {
+    while (idx < tasks.length) {
+      const i = idx++;
+      results[i] = await tasks[i]();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
+  return results;
+}
