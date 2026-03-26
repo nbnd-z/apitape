@@ -96,9 +96,9 @@ export function createCLI(meta) {
 
       // Apply defaults
       for (const opt of cmd.options) {
-        const key = optKey(opt.long);
+        const key = camelCase(optKey(opt.long));
         if (parsed[key] === undefined && opt.defaultValue !== undefined) {
-          parsed[camelCase(key)] = opt.defaultValue;
+          parsed[key] = opt.defaultValue;
         }
       }
 
