@@ -16,6 +16,7 @@ import { syncCommand } from './commands/sync.js';
 import { importCommand } from './commands/import.js';
 import { mockCommand, mockAllCommand } from './commands/mock.js';
 import { deleteCommand } from './commands/delete.js';
+import { exportCommand } from './commands/export.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../../package.json');
@@ -54,7 +55,7 @@ cli.command({
   description: 'Capture an API response as a fixture',
   positional: '<url>',
   options: [
-    { short: '-n', long: '--name', description: 'Fixture name', type: 'string', required: true },
+    { short: '-n', long: '--name', description: 'Fixture name (auto-generated from URL if omitted)', type: 'string' },
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: '-m', long: '--method', description: 'HTTP method (default: GET)', type: 'string' },
     { short: '-H', long: '--header', description: 'Request headers', type: 'string', multiple: true },
@@ -63,7 +64,9 @@ cli.command({
     { short: null, long: '--jsdoc', description: 'Generate JSDoc types file (.types.js)', type: 'boolean' },
     { short: null, long: '--typescript', description: 'Generate TypeScript types file (.d.ts)', type: 'boolean' },
     { short: null, long: '--msw', description: 'Generate MSW handler file (.msw.js)', type: 'boolean' },
-    { short: null, long: '--allow-error', description: 'Capture non-2xx responses (e.g. 404, 500)', type: 'boolean' }
+    { short: null, long: '--allow-error', description: 'Capture non-2xx responses (e.g. 404, 500)', type: 'boolean' },
+    { short: '-d', long: '--data', description: 'Request body (JSON string or @file.json)', type: 'string' },
+    { short: '-t', long: '--tag', description: 'Tag fixture for grouping/filtering', type: 'string', multiple: true }
   ],
   action: withExitCode(captureCommand)
 });
@@ -84,7 +87,8 @@ cli.command({
   description: 'List all fixtures with metadata',
   positional: null,
   options: [
-    { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' }
+    { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' },
+    { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' }
   ],
   action: withExitCode(listCommand)
 });
@@ -97,6 +101,8 @@ cli.command({
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: null, long: '--config', description: 'Config file path', type: 'string' },
     { short: null, long: '--fail-on-drift', description: 'Exit with error code if drift detected', type: 'boolean' },
+    { short: '-n', long: '--name', description: 'Filter by fixture name', type: 'string' },
+    { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' },
     { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' }
   ],
   action: withExitCode(diffCommand)
@@ -109,8 +115,11 @@ cli.command({
   options: [
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: null, long: '--config', description: 'Config file path', type: 'string' },
+    { short: '-n', long: '--name', description: 'Filter by fixture name', type: 'string' },
+    { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' },
     { short: null, long: '--dry-run', description: 'Show what would be synced without making changes', type: 'boolean' },
-    { short: null, long: '--force', description: 'Force re-capture even if unchanged', type: 'boolean' }
+    { short: null, long: '--force', description: 'Force re-capture even if unchanged', type: 'boolean' },
+    { short: null, long: '--backup', description: 'Backup existing fixtures before overwriting', type: 'boolean' }
   ],
   action: withExitCode(syncCommand)
 });
@@ -144,20 +153,34 @@ cli.command({
     { short: null, long: '--msw', description: 'Generate MSW handlers for mock variants', type: 'boolean' },
     { short: null, long: '--vary', description: 'Fields to vary (space-separated)', type: 'string', multiple: true }
   ],
-  action: withExitCode(mockCommand)
+  action: withExitCode((name, opts) => opts.all ? mockAllCommand(opts) : mockCommand(name, opts))
 });
 
 cli.command({
   name: 'delete',
   description: 'Delete a fixture and its associated files',
   positional: '<name>',
-  options: [],
+  options: [
+    { short: '-f', long: '--force', description: 'Skip confirmation prompt', type: 'boolean' }
+  ],
   action: withExitCode(deleteCommand)
 });
 
 cli.command({
+  name: 'export',
+  description: 'Export fixtures as bundled MSW handlers file',
+  positional: null,
+  options: [
+    { short: null, long: '--format', description: 'Export format (default: msw)', type: 'string', defaultValue: 'msw' },
+    { short: '-o', long: '--output', description: 'Output directory', type: 'string' },
+    { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' }
+  ],
+  action: withExitCode(exportCommand)
+});
+
+cli.command({
   name: 'mock:all',
-  description: 'Generate mock variants for all fixtures',
+  description: 'Generate mock variants for all fixtures (alias for mock --all)',
   positional: null,
   options: [
     { short: '-c', long: '--count', description: 'Number of variants per fixture', type: 'string', defaultValue: '3' },

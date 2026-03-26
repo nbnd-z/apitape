@@ -6,26 +6,8 @@
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, loadMetadata } from '../../core/fixture-store.js';
-import { diffObjects, formatDiffResult } from '../../core/differ.js';
-
-/**
- * Concurrency-limited Promise.all
- * @param {Array<Function>} tasks - Array of () => Promise
- * @param {number} limit - Concurrency limit
- * @returns {Promise<Array>}
- */
-async function pAll(tasks, limit) {
-  const results = new Array(tasks.length);
-  let idx = 0;
-  async function run() {
-    while (idx < tasks.length) {
-      const i = idx++;
-      results[i] = await tasks[i]();
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
-  return results;
-}
+import { diffObjects, formatDiffResult, setDiffArraySampleSize } from '../../core/differ.js';
+import { pAll } from '../../core/utils.js';
 
 /**
  * Compare all fixtures against live API
@@ -33,7 +15,7 @@ async function pAll(tasks, limit) {
  * @returns {Promise<number>} Exit code
  */
 export async function diffCommand(options = {}) {
-  const { env, failOnDrift = false, json = false, name: filterName, concurrency = 4 } = options;
+  const { env, failOnDrift = false, json = false, name: filterName, tag: filterTag, concurrency = 4 } = options;
 
   /** @param {string} msg */
   const log = (msg) => { if (!json) console.log(msg); };
@@ -42,10 +24,16 @@ export async function diffCommand(options = {}) {
 
   try {
     const config = await loadConfig(options.config);
+    if (config.arraySampleSize) {
+      setDiffArraySampleSize(config.arraySampleSize);
+    }
     let fixtures = await listFixtures();
 
     if (filterName) {
       fixtures = fixtures.filter(f => f.name === filterName);
+    }
+    if (filterTag) {
+      fixtures = fixtures.filter(f => f.tags && f.tags.includes(filterTag));
     }
 
     if (fixtures.length === 0) {

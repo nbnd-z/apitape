@@ -9,7 +9,7 @@ import path from 'path';
 import { loadConfig } from '../../core/config.js';
 import { listFixtures, loadFixture } from '../../core/fixture-store.js';
 import { generateJSDoc, generateTypeScript } from '../../core/generator.js';
-import { toPascalCase } from '../utils.js';
+import { toPascalCase } from '../../core/utils.js';
 
 /**
  * Generate types from all fixtures

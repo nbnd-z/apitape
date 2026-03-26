@@ -31,4 +31,4 @@ export { generateArtifacts, regenerateExistingArtifacts } from './core/artifacts
 export { ApitapeError, FixtureNotFoundError, ConfigError, FixtureSizeError, HttpRequestError } from './core/errors.js';
 
 // Core utils
-export { sanitizeName, toPascalCase } from './core/utils.js';
+export { sanitizeName, toPascalCase, pAll } from './core/utils.js';

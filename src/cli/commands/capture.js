@@ -5,9 +5,11 @@
 
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
-import { saveFixture, getFixturesDir } from '../../core/fixture-store.js';
+import { saveFixture, getFixturesDir, fixtureExists } from '../../core/fixture-store.js';
 import { generateArtifacts } from '../../core/artifacts.js';
 import { parseHeaders } from '../utils.js';
+import { sanitizeName } from '../../core/utils.js';
+import fs from 'fs/promises';
 
 /**
  * Capture an API response as a fixture
@@ -29,10 +31,21 @@ export async function captureCommand(url, options = {}) {
     // Parse --data body
     let body = null;
     if (options.data) {
-      try {
-        body = JSON.parse(options.data);
-      } catch {
-        body = options.data;
+      if (options.data.startsWith('@')) {
+        const filePath = options.data.slice(1);
+        try {
+          const fileContent = await fs.readFile(filePath, 'utf-8');
+          body = JSON.parse(fileContent);
+        } catch (err) {
+          console.error(`✗ Failed to read/parse data file "${filePath}": ${err.message}`);
+          return 1;
+        }
+      } else {
+        try {
+          body = JSON.parse(options.data);
+        } catch {
+          body = options.data;
+        }
       }
     }
 
@@ -48,22 +61,20 @@ export async function captureCommand(url, options = {}) {
       return 1;
     }
 
-    if (!options.name) {
-      console.error('✗ Missing required option: --name <name>');
-      return 1;
-    }
+    const fixtureName = options.name || nameFromUrl(resolvedUrl, method);
+    const isOverwrite = await fixtureExists(fixtureName);
 
-    const fixtureName = options.name;
     const metadata = {
       url: resolvedUrl,
       method,
       capturedAt: new Date().toISOString(),
       headers: mergedHeaders,
-      status: response.status
+      status: response.status,
+      ...(options.tag ? { tags: Array.isArray(options.tag) ? options.tag : [options.tag] } : {})
     };
 
     await saveFixture(fixtureName, response.data, metadata);
-    console.log(`✓ Saved fixture: ${fixtureName} (HTTP ${response.status})`);
+    console.log(`✓ ${isOverwrite ? 'Updated' : 'Saved'} fixture: ${fixtureName} (HTTP ${response.status})`);
 
     const fixturesDir = await getFixturesDir();
     const generated = await generateArtifacts(
@@ -93,4 +104,22 @@ function buildAuth(options, config) {
     return { type: config.auth.type, token: config.auth.token };
   }
   return {};
+}
+
+/**
+ * Derive a fixture name from URL and method
+ * @param {string} url - Request URL
+ * @param {string} method - HTTP method
+ * @returns {string} Sanitized fixture name
+ */
+function nameFromUrl(url, method) {
+  try {
+    const { pathname } = new URL(url);
+    const segments = pathname.split('/').filter(Boolean);
+    const base = segments.length > 0 ? segments.join('-') : 'fixture';
+    const prefix = method.toLowerCase() !== 'get' ? `${method.toLowerCase()}-` : '';
+    return sanitizeName(`${prefix}${base}`);
+  } catch {
+    return sanitizeName(url.replace(/[^a-z0-9]/gi, '-'));
+  }
 }

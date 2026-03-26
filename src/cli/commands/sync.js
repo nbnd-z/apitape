@@ -9,27 +9,8 @@ import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
 import { regenerateExistingArtifacts } from '../../core/artifacts.js';
 import { hashValue } from '../../core/differ.js';
-import { sanitizeName } from '../../core/utils.js';
+import { sanitizeName, pAll } from '../../core/utils.js';
 import path from 'path';
-
-/**
- * Concurrency-limited Promise.all
- * @param {Array<Function>} tasks
- * @param {number} limit
- * @returns {Promise<Array>}
- */
-async function pAll(tasks, limit) {
-  const results = new Array(tasks.length);
-  let idx = 0;
-  async function run() {
-    while (idx < tasks.length) {
-      const i = idx++;
-      results[i] = await tasks[i]();
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => run()));
-  return results;
-}
 
 /**
  * Sync all fixtures from their original URLs
@@ -37,7 +18,7 @@ async function pAll(tasks, limit) {
  * @returns {Promise<number>} Exit code
  */
 export async function syncCommand(options = {}) {
-  const { env, dryRun = false, force = false, name: filterName, concurrency = 4, backup = false } = options;
+  const { env, dryRun = false, force = false, name: filterName, tag: filterTag, concurrency = 4, backup = false } = options;
 
   console.log(`Syncing fixtures from ${env || 'default'} environment...\n`);
 
@@ -47,6 +28,9 @@ export async function syncCommand(options = {}) {
 
     if (filterName) {
       fixtures = fixtures.filter(f => f.name === filterName);
+    }
+    if (filterTag) {
+      fixtures = fixtures.filter(f => f.tags && f.tags.includes(filterTag));
     }
 
     const fixturesWithUrls = fixtures.filter(f => f.url);

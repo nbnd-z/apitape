@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/github/license/nbnd-z/apitape)](https://github.com/nbnd-z/apitape/blob/main/LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 
-Record real API responses as test fixtures with auto-generated types and MSW handlers — then detect drift before your tests break.
+Snapshot your API. Auto-generate types, mocks, and drift detection — zero dependencies.
 
 ## How It Works
 
@@ -16,6 +16,7 @@ capture → fixtures (.json + .meta.json)
 diff   → compare fixtures against live API → detect drift
 sync   → re-capture all fixtures from original URLs
 import → generate fixtures from OpenAPI spec
+export → bundle all MSW handlers into one file
 ```
 
 1. **Capture** a live API response as a JSON fixture with metadata
@@ -24,6 +25,8 @@ import → generate fixtures from OpenAPI spec
 4. **Re-sync** all fixtures when the API intentionally changes
 5. **Import** fixtures from an OpenAPI spec, optionally with mock data
 6. **Mock** — generate randomised variants of existing fixtures for broader test coverage
+7. **Export** — bundle all MSW handlers into a single file for easy import
+8. **Tag** — organise fixtures with tags for filtering across all commands
 
 ## Features
 
@@ -34,6 +37,8 @@ import → generate fixtures from OpenAPI spec
 - 🧪 Generate MSW handlers automatically for browser/node mocking
 - 📦 Import fixtures from OpenAPI specs (JSON & YAML)
 - 🎲 Generate mock data variants from existing fixtures
+- 🏷️ Tag fixtures for grouping and filtering
+- 📤 Export bundled MSW handlers file
 - 🔐 Support for Bearer and API Key authentication (CLI flags or config)
 - 📁 Simple fixture storage with metadata
 - 🪶 Zero runtime dependencies
@@ -60,6 +65,10 @@ This creates:
 ### 2. Capture API Responses
 
 ```bash
+# Name is auto-generated from URL if omitted
+npx apitape capture https://api.example.com/users
+
+# Or specify a name
 npx apitape capture https://api.example.com/users --name users
 ```
 
@@ -106,7 +115,36 @@ npx apitape sync --dry-run  # Preview changes
 ```bash
 npx apitape list
 npx apitape list --json
-npx apitape delete users    # Removes fixture + types + MSW handler
+npx apitape list --tag auth       # Filter by tag
+npx apitape delete users          # Removes fixture + types + MSW handler
+npx apitape delete users --force  # Skip confirmation prompt
+```
+
+### 7. Export MSW Handlers
+
+Bundle all fixtures into a single MSW handlers file:
+
+```bash
+npx apitape export
+npx apitape export --tag auth --output ./src/mocks
+```
+
+## Tagging
+
+Tag fixtures on capture for easy filtering:
+
+```bash
+apitape capture https://api.example.com/login --name login --tag auth --tag v2
+apitape capture https://api.example.com/users --name users --tag auth
+```
+
+Then filter any command by tag:
+
+```bash
+apitape list --tag auth
+apitape diff --tag auth
+apitape sync --tag auth
+apitape export --tag auth
 ```
 
 ## Configuration
@@ -157,7 +195,10 @@ apitape init --no-gitignore # Skip .gitignore update
 Capture an API response as a fixture.
 
 ```bash
-# Basic capture
+# Basic capture (name auto-generated from URL)
+apitape capture https://api.example.com/users
+
+# With explicit name
 apitape capture https://api.example.com/users --name users
 
 # With environment resolution
@@ -175,6 +216,17 @@ apitape capture https://api.example.com/users \
   -H "Accept: text/plain" \
   -H "X-Custom: value"
 
+# With request body (JSON string or file)
+apitape capture https://api.example.com/users \
+  --name create-user \
+  --method POST \
+  --data '{"name": "John"}'
+
+apitape capture https://api.example.com/users \
+  --name create-user \
+  --method POST \
+  --data @body.json
+
 # Capture error responses (404, 500, etc.)
 apitape capture https://api.example.com/missing \
   --name not-found \
@@ -184,13 +236,20 @@ apitape capture https://api.example.com/missing \
 apitape capture https://api.example.com/users \
   --name users \
   --typescript --msw
+
+# Tag fixtures for grouping
+apitape capture https://api.example.com/users \
+  --name users \
+  --tag auth --tag v2
 ```
 
 Options:
-- `-n, --name <name>` - Fixture name (required)
+- `-n, --name <name>` - Fixture name (auto-generated from URL if omitted)
 - `-e, --env <environment>` - Environment name for URL resolution
 - `-m, --method <method>` - HTTP method (default: GET)
 - `-H, --header <headers...>` - Request headers (format: `"Key: Value"`)
+- `-d, --data <data>` - Request body (JSON string or `@file.json`)
+- `-t, --tag <tags...>` - Tag fixture for grouping/filtering
 - `--auth <type>` - Auth type: bearer, api-key
 - `--auth-token <token>` - Auth token or API key
 - `--jsdoc` - Generate JSDoc types file
@@ -215,6 +274,7 @@ List all fixtures with metadata.
 ```bash
 apitape list
 apitape list --json
+apitape list --tag auth  # Filter by tag
 ```
 
 ### `delete <name>`
@@ -223,6 +283,7 @@ Delete a fixture and all associated generated files (.json, .meta.json, .d.ts, .
 
 ```bash
 apitape delete users
+apitape delete users --force  # Skip confirmation prompt
 ```
 
 ### `diff`
@@ -234,6 +295,8 @@ apitape diff
 apitape diff --env staging
 apitape diff --fail-on-drift  # Exit code 1 on drift (CI-friendly)
 apitape diff --json           # Machine-readable JSON output
+apitape diff --name users     # Check single fixture
+apitape diff --tag auth       # Check tagged fixtures only
 apitape diff --config ./custom-config.json
 ```
 
@@ -244,7 +307,10 @@ Re-capture all fixtures from their original URLs.
 ```bash
 apitape sync
 apitape sync --dry-run
-apitape sync --force
+apitape sync --force          # Re-capture even if unchanged
+apitape sync --backup         # Backup existing fixtures before overwriting
+apitape sync --name users     # Sync single fixture
+apitape sync --tag auth       # Sync tagged fixtures only
 apitape sync --env staging
 apitape sync --config ./custom-config.json
 ```
@@ -268,15 +334,26 @@ apitape mock users --count 5
 apitape mock users --count 3 --vary name email
 apitape mock users --count 3 --typescript --msw
 apitape mock users --count 3 --seed 42  # Deterministic output
+apitape mock --all                      # All fixtures
 ```
 
 ### `mock:all`
 
-Generate mock variants for all fixtures at once.
+Generate mock variants for all fixtures at once (alias for `mock --all`).
 
 ```bash
 apitape mock:all
 apitape mock:all --count 5 --typescript --msw
+```
+
+### `export`
+
+Bundle all fixtures into a single MSW handlers file.
+
+```bash
+apitape export
+apitape export --tag auth              # Export tagged fixtures only
+apitape export --output ./src/mocks    # Custom output directory
 ```
 
 ## CI Integration
@@ -296,22 +373,26 @@ All core functions are exported for library usage:
 ```javascript
 import {
   // Config
-  loadConfig, resolveEnv,
+  loadConfig, resolveEnv, saveConfig, clearConfigCache,
   // HTTP
   fetchWithAuth,
   // Fixtures
   saveFixture, loadFixture, loadMetadata,
   listFixtures, deleteFixture, fixtureExists,
   // Type generation
-  generateJSDoc, generateTypeScript, generateType, inferType,
+  generateJSDoc, generateTypeScript, generateType, inferType, setArraySampleSize,
   // Diff
-  diffObjects, formatDiffResult,
+  diffObjects, formatDiffResult, hashValue, setDiffArraySampleSize,
   // Mock generation
   generateMockData, generateVariants, createRng,
   // MSW
   generateMSW, generateMSWHandlers,
   // Artifact generation (types + MSW in one call)
-  generateArtifacts, regenerateExistingArtifacts
+  generateArtifacts, regenerateExistingArtifacts,
+  // Errors
+  ApitapeError, FixtureNotFoundError, ConfigError, FixtureSizeError, HttpRequestError,
+  // Utils
+  sanitizeName, toPascalCase, pAll
 } from 'api-tape';
 ```
 
@@ -325,7 +406,8 @@ const response = await fetchWithAuth('https://api.example.com/users', {
 
 await saveFixture('users', response.data, {
   url: 'https://api.example.com/users',
-  method: 'GET'
+  method: 'GET',
+  tags: ['auth', 'v2']
 });
 
 // Generate TypeScript + MSW in one call
@@ -349,7 +431,7 @@ const variants = generateVariants(response.data, { count: 5, variations: ['name'
 
 ## Limitations
 
-- Array drift detection compares only the first 5 items for structural changes. Differences beyond index 4 are not reported.
+- Array drift detection compares a configurable number of items (default: 5 in differ, configurable via `arraySampleSize` in config). Items beyond the sample size are not compared.
 - Mock data generation uses `Math.random()` by default and is non-deterministic. Pass `--seed <number>` for reproducible output in snapshot tests.
 - OpenAPI import supports JSON and YAML specs.
 
