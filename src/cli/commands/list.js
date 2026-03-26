@@ -13,10 +13,15 @@ import { listFixtures } from '../../core/fixture-store.js';
  */
 export async function listCommand(options = {}) {
   try {
-    const fixtures = await listFixtures();
+    let fixtures = await listFixtures();
+
+    if (options.tag) {
+      const filterTag = options.tag;
+      fixtures = fixtures.filter(f => f.tags && f.tags.includes(filterTag));
+    }
 
     if (fixtures.length === 0) {
-      console.log('No fixtures found.');
+      console.log(options.tag ? `No fixtures found with tag "${options.tag}".` : 'No fixtures found.');
       return 0;
     }
 
@@ -26,17 +31,18 @@ export async function listCommand(options = {}) {
     }
 
     console.log('Fixtures:\n');
-    console.log('  Name'.padEnd(30) + 'Captured'.padEnd(25) + 'URL');
-    console.log('  '.padEnd(30, '-') + ' '.padEnd(25, '-') + '---');
+    console.log('  Name'.padEnd(30) + 'Tags'.padEnd(20) + 'Captured'.padEnd(25) + 'URL');
+    console.log('  '.padEnd(30, '-') + ' '.padEnd(20, '-') + ' '.padEnd(25, '-') + '---');
 
     for (const fixture of fixtures) {
       const name = fixture.name.substring(0, 28);
+      const tags = (fixture.tags || []).join(', ') || '-';
       const capturedAt = fixture.capturedAt
         ? new Date(fixture.capturedAt).toLocaleString()
         : 'N/A';
       const url = fixture.url || 'N/A';
 
-      console.log(`  ${name.padEnd(30)}${capturedAt.padEnd(25)}${url}`);
+      console.log(`  ${name.padEnd(30)}${tags.padEnd(20)}${capturedAt.padEnd(25)}${url}`);
     }
 
     console.log(`\nTotal: ${fixtures.length} fixture(s)`);

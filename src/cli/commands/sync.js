@@ -18,7 +18,7 @@ import path from 'path';
  * @returns {Promise<number>} Exit code
  */
 export async function syncCommand(options = {}) {
-  const { env, dryRun = false, force = false, name: filterName, concurrency = 4, backup = false } = options;
+  const { env, dryRun = false, force = false, name: filterName, tag: filterTag, concurrency = 4, backup = false } = options;
 
   console.log(`Syncing fixtures from ${env || 'default'} environment...\n`);
 
@@ -28,6 +28,9 @@ export async function syncCommand(options = {}) {
 
     if (filterName) {
       fixtures = fixtures.filter(f => f.name === filterName);
+    }
+    if (filterTag) {
+      fixtures = fixtures.filter(f => f.tags && f.tags.includes(filterTag));
     }
 
     const fixturesWithUrls = fixtures.filter(f => f.url);

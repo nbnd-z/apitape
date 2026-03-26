@@ -5,7 +5,7 @@
 
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
-import { saveFixture, getFixturesDir } from '../../core/fixture-store.js';
+import { saveFixture, getFixturesDir, fixtureExists } from '../../core/fixture-store.js';
 import { generateArtifacts } from '../../core/artifacts.js';
 import { parseHeaders } from '../utils.js';
 import { sanitizeName } from '../../core/utils.js';
@@ -62,16 +62,19 @@ export async function captureCommand(url, options = {}) {
     }
 
     const fixtureName = options.name || nameFromUrl(resolvedUrl, method);
+    const isOverwrite = await fixtureExists(fixtureName);
+
     const metadata = {
       url: resolvedUrl,
       method,
       capturedAt: new Date().toISOString(),
       headers: mergedHeaders,
-      status: response.status
+      status: response.status,
+      ...(options.tag ? { tags: Array.isArray(options.tag) ? options.tag : [options.tag] } : {})
     };
 
     await saveFixture(fixtureName, response.data, metadata);
-    console.log(`✓ Saved fixture: ${fixtureName} (HTTP ${response.status})`);
+    console.log(`✓ ${isOverwrite ? 'Updated' : 'Saved'} fixture: ${fixtureName} (HTTP ${response.status})`);
 
     const fixturesDir = await getFixturesDir();
     const generated = await generateArtifacts(

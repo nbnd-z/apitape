@@ -15,7 +15,7 @@ import { pAll } from '../../core/utils.js';
  * @returns {Promise<number>} Exit code
  */
 export async function diffCommand(options = {}) {
-  const { env, failOnDrift = false, json = false, name: filterName, concurrency = 4 } = options;
+  const { env, failOnDrift = false, json = false, name: filterName, tag: filterTag, concurrency = 4 } = options;
 
   /** @param {string} msg */
   const log = (msg) => { if (!json) console.log(msg); };
@@ -31,6 +31,9 @@ export async function diffCommand(options = {}) {
 
     if (filterName) {
       fixtures = fixtures.filter(f => f.name === filterName);
+    }
+    if (filterTag) {
+      fixtures = fixtures.filter(f => f.tags && f.tags.includes(filterTag));
     }
 
     if (fixtures.length === 0) {
