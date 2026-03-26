@@ -54,7 +54,7 @@ cli.command({
   description: 'Capture an API response as a fixture',
   positional: '<url>',
   options: [
-    { short: '-n', long: '--name', description: 'Fixture name', type: 'string', required: true },
+    { short: '-n', long: '--name', description: 'Fixture name (auto-generated from URL if omitted)', type: 'string' },
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: '-m', long: '--method', description: 'HTTP method (default: GET)', type: 'string' },
     { short: '-H', long: '--header', description: 'Request headers', type: 'string', multiple: true },
@@ -63,7 +63,8 @@ cli.command({
     { short: null, long: '--jsdoc', description: 'Generate JSDoc types file (.types.js)', type: 'boolean' },
     { short: null, long: '--typescript', description: 'Generate TypeScript types file (.d.ts)', type: 'boolean' },
     { short: null, long: '--msw', description: 'Generate MSW handler file (.msw.js)', type: 'boolean' },
-    { short: null, long: '--allow-error', description: 'Capture non-2xx responses (e.g. 404, 500)', type: 'boolean' }
+    { short: null, long: '--allow-error', description: 'Capture non-2xx responses (e.g. 404, 500)', type: 'boolean' },
+    { short: '-d', long: '--data', description: 'Request body (JSON string or @file.json)', type: 'string' }
   ],
   action: withExitCode(captureCommand)
 });
@@ -97,6 +98,7 @@ cli.command({
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: null, long: '--config', description: 'Config file path', type: 'string' },
     { short: null, long: '--fail-on-drift', description: 'Exit with error code if drift detected', type: 'boolean' },
+    { short: '-n', long: '--name', description: 'Filter by fixture name', type: 'string' },
     { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' }
   ],
   action: withExitCode(diffCommand)
@@ -109,6 +111,7 @@ cli.command({
   options: [
     { short: '-e', long: '--env', description: 'Environment name for URL resolution', type: 'string' },
     { short: null, long: '--config', description: 'Config file path', type: 'string' },
+    { short: '-n', long: '--name', description: 'Filter by fixture name', type: 'string' },
     { short: null, long: '--dry-run', description: 'Show what would be synced without making changes', type: 'boolean' },
     { short: null, long: '--force', description: 'Force re-capture even if unchanged', type: 'boolean' }
   ],
@@ -144,7 +147,7 @@ cli.command({
     { short: null, long: '--msw', description: 'Generate MSW handlers for mock variants', type: 'boolean' },
     { short: null, long: '--vary', description: 'Fields to vary (space-separated)', type: 'string', multiple: true }
   ],
-  action: withExitCode(mockCommand)
+  action: withExitCode((name, opts) => opts.all ? mockAllCommand(opts) : mockCommand(name, opts))
 });
 
 cli.command({

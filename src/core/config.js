@@ -54,11 +54,14 @@ export async function loadConfig(filePath) {
 
   try {
     const content = await fs.readFile(configPath, 'utf-8');
-    const config = { ...getDefaultConfig(), ...JSON.parse(content) };
+    const parsed = JSON.parse(content);
+    const config = { ...getDefaultConfig(), ...parsed };
+    validateConfig(config);
     cache.config = config;
     cache.path = configPath;
     return config;
   } catch (error) {
+    if (error instanceof ConfigError) throw error;
     throw new ConfigError(`Failed to parse config file: ${error.message}`);
   }
 }
@@ -120,4 +123,28 @@ export async function saveConfig(config, filePath) {
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
   // Invalidate cache
   clearConfigCache();
+}
+
+/**
+ * Validate configuration values
+ * @param {Config} config - Configuration to validate
+ * @throws {ConfigError} If config is invalid
+ */
+function validateConfig(config) {
+  if (typeof config.fixturesDir !== 'string' || !config.fixturesDir) {
+    throw new ConfigError('fixturesDir must be a non-empty string');
+  }
+  if (typeof config.maxSizeBytes !== 'number' || config.maxSizeBytes <= 0) {
+    throw new ConfigError('maxSizeBytes must be a positive number');
+  }
+  if (typeof config.arraySampleSize !== 'number' || config.arraySampleSize <= 0) {
+    throw new ConfigError('arraySampleSize must be a positive number');
+  }
+  const validFormats = ['jsdoc', 'typescript'];
+  if (!validFormats.includes(config.typesFormat)) {
+    throw new ConfigError(`typesFormat must be one of: ${validFormats.join(', ')}`);
+  }
+  if (config.auth !== null && typeof config.auth !== 'object') {
+    throw new ConfigError('auth must be an object or null');
+  }
 }
