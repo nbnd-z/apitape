@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-03-26
+
+### Fixed
+- `deleteFixture` now correctly returns `false` when fixture doesn't exist (was checking only first `Promise.allSettled` result without distinguishing ENOENT)
+- `buildAuthHeader` now sanitizes custom api-key header names (`auth.header`), not just token values
+- `sanitizeName` now throws on empty/invalid input instead of silently returning an empty string
+- Removed unused variable `saved` and dead no-op block in YAML parser
+- Prefixed unused `parentIndent` parameter in YAML parser with `_` to satisfy linter
+
 ## [0.2.2] - 2026-03-25
 
 ### Fixed
