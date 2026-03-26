@@ -135,7 +135,12 @@ export async function deleteFixture(name) {
     filesToRemove.map(f => fs.unlink(f))
   );
 
-  return results[0].status === 'fulfilled';
+  // Return true if the primary data file was deleted (fixture existed)
+  const dataResult = results[0];
+  if (dataResult.status === 'rejected' && dataResult.reason?.code === 'ENOENT') {
+    return false;
+  }
+  return dataResult.status === 'fulfilled';
 }
 
 /**

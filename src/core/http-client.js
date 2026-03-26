@@ -143,8 +143,10 @@ function buildAuthHeader(auth) {
   switch (auth.type) {
     case 'bearer':
       return { name: 'Authorization', value: `Bearer ${token}` };
-    case 'api-key':
-      return { name: auth.header || 'X-API-Key', value: token };
+    case 'api-key': {
+      const headerName = sanitizeHeaderValue(auth.header || 'X-API-Key');
+      return { name: headerName, value: token };
+    }
     default:
       return null;
   }

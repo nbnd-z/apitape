@@ -26,7 +26,7 @@ export function parseYaml(text) {
  * @param {number} parentIndent - Parent indentation level
  * @returns {*} Parsed value
  */
-function parseNode(ctx, parentIndent) {
+function parseNode(ctx, _parentIndent) {
   skipBlanks(ctx);
   if (ctx.pos >= ctx.lines.length) return null;
 
@@ -143,13 +143,8 @@ function parseBlockSequence(ctx, indent) {
       // Inline mapping as sequence item: "- key: value"
       // Rewrite the line without the dash and parse as mapping
       const itemIndent = curIndent + 2;
-      const saved = ctx.lines[ctx.pos];
       ctx.lines[ctx.pos] = ' '.repeat(itemIndent) + after;
       result.push(parseBlockMapping(ctx, itemIndent));
-      // Restore in case we need to re-read (shouldn't, but safe)
-      if (ctx.pos < ctx.lines.length) {
-        // no-op, pos already advanced
-      }
     } else if (after.startsWith('{')) {
       result.push(parseFlowMapping(after));
       ctx.pos++;

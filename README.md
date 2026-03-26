@@ -36,7 +36,7 @@ import → generate fixtures from OpenAPI spec
 - 🎲 Generate mock data variants from existing fixtures
 - 🔐 Support for Bearer and API Key authentication (CLI flags or config)
 - 📁 Simple fixture storage with metadata
-- 🪶 Zero runtime dependencies (besides commander)
+- 🪶 Zero runtime dependencies
 
 ## Installation
 
