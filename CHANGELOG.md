@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-11
+
+### Added
+- `--concurrency` flag for `diff` and `sync` commands (default: 4 parallel requests)
+- Architecture diagram and visual flow diagram (`docs/architecture.svg`, `docs/how-it-works.svg`)
+- README badges: npm version, downloads, license, node version, zero dependencies
+
+### Changed
+- `saveFixture` uses shared `getFixturesDir()` helper instead of inline path resolution
+- README redesigned with professional SVG diagrams and updated badges
+
 ## [0.3.0] - 2026-03-26
 
 ### Added

@@ -51,7 +51,7 @@ function getFixturePaths(name, fixturesDir) {
  */
 export async function saveFixture(name, data, metadata = {}) {
   const config = await loadConfig();
-  const fixturesDir = path.resolve(process.cwd(), config.fixturesDir || './fixtures');
+  const fixturesDir = await getFixturesDir();
 
   // Enforce maxSizeBytes
   const serialized = JSON.stringify(data, null, 2);

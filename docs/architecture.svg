@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Inter, -apple-system, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="cliGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="outGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="extGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#3b82f6" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="520" rx="12" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <text x="450" y="38" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500" letter-spacing="2">APITAPE ARCHITECTURE</text>
+
+  <!-- CLI Layer -->
+  <rect x="30" y="60" width="200" height="180" rx="10" fill="#1e1b4b" fill-opacity="0.5" stroke="#4c1d95" stroke-opacity="0.4" filter="url(#shadow)"/>
+  <text x="130" y="85" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" letter-spacing="1">CLI LAYER</text>
+  <rect x="50" y="100" width="160" height="36" rx="6" fill="url(#cliGrad)" filter="url(#shadow)"/>
+  <text x="130" y="123" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">arg-parser</text>
+  <rect x="50" y="148" width="160" height="36" rx="6" fill="url(#cliGrad)" filter="url(#shadow)"/>
+  <text x="130" y="171" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">commands/*</text>
+  <text x="130" y="218" text-anchor="middle" fill="#c4b5fd" font-size="10">capture · diff · sync</text>
+  <text x="130" y="232" text-anchor="middle" fill="#c4b5fd" font-size="10">mock · import · export</text>
+
+  <!-- Core Engine -->
+  <rect x="270" y="60" width="350" height="290" rx="10" fill="#0c2d57" fill-opacity="0.5" stroke="#1d4ed8" stroke-opacity="0.3" filter="url(#glow)"/>
+  <text x="445" y="85" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600" letter-spacing="1">CORE ENGINE</text>
+
+  <rect x="290" y="100" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="362" y="119" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">http-client</text>
+  <text x="362" y="135" text-anchor="middle" fill="#bfdbfe" font-size="9">fetch + auth</text>
+
+  <rect x="455" y="100" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="527" y="119" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">fixture-store</text>
+  <text x="527" y="135" text-anchor="middle" fill="#bfdbfe" font-size="9">save · load · list</text>
+
+  <rect x="290" y="160" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="362" y="179" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">generator</text>
+  <text x="362" y="195" text-anchor="middle" fill="#bfdbfe" font-size="9">TS · JSDoc types</text>
+
+  <rect x="455" y="160" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="527" y="179" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">differ</text>
+  <text x="527" y="195" text-anchor="middle" fill="#bfdbfe" font-size="9">drift detection</text>
+
+  <rect x="290" y="220" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="362" y="239" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">mock-generator</text>
+  <text x="362" y="255" text-anchor="middle" fill="#bfdbfe" font-size="9">variants · seeded RNG</text>
+
+  <rect x="455" y="220" width="145" height="44" rx="6" fill="url(#coreGrad)" filter="url(#shadow)"/>
+  <text x="527" y="239" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">yaml-parser</text>
+  <text x="527" y="255" text-anchor="middle" fill="#bfdbfe" font-size="9">OpenAPI import</text>
+
+  <rect x="290" y="280" width="310" height="44" rx="6" fill="#1e3a5f" stroke="#2563eb" stroke-opacity="0.3" filter="url(#shadow)"/>
+  <text x="445" y="299" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">artifacts</text>
+  <text x="445" y="315" text-anchor="middle" fill="#7dd3fc" font-size="9">orchestrates type + MSW generation</text>
+
+  <!-- Output Layer -->
+  <rect x="660" y="60" width="210" height="290" rx="10" fill="#052e16" fill-opacity="0.5" stroke="#16a34a" stroke-opacity="0.3" filter="url(#shadow)"/>
+  <text x="765" y="85" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="600" letter-spacing="1">OUTPUT</text>
+
+  <rect x="680" y="100" width="170" height="36" rx="6" fill="url(#outGrad)" filter="url(#shadow)"/>
+  <text x="765" y="123" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">📄 .json fixtures</text>
+
+  <rect x="680" y="148" width="170" height="36" rx="6" fill="url(#outGrad)" filter="url(#shadow)"/>
+  <text x="765" y="171" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">📋 .meta.json</text>
+
+  <rect x="680" y="196" width="170" height="36" rx="6" fill="url(#outGrad)" filter="url(#shadow)"/>
+  <text x="765" y="219" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">🔷 .d.ts types</text>
+
+  <rect x="680" y="244" width="170" height="36" rx="6" fill="url(#outGrad)" filter="url(#shadow)"/>
+  <text x="765" y="267" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">📝 .types.js JSDoc</text>
+
+  <rect x="680" y="292" width="170" height="36" rx="6" fill="url(#outGrad)" filter="url(#shadow)"/>
+  <text x="765" y="315" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">🧪 .msw.js handlers</text>
+
+  <!-- External -->
+  <rect x="30" y="380" width="840" height="110" rx="10" fill="#1c1917" fill-opacity="0.5" stroke="#78716c" stroke-opacity="0.3" filter="url(#shadow)"/>
+  <text x="450" y="405" text-anchor="middle" fill="#a8a29e" font-size="11" font-weight="600" letter-spacing="1">EXTERNAL</text>
+
+  <rect x="60" y="420" width="160" height="50" rx="6" fill="url(#extGrad)" filter="url(#shadow)"/>
+  <text x="140" y="443" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">🌐 Live APIs</text>
+  <text x="140" y="460" text-anchor="middle" fill="#fef3c7" font-size="9">capture · diff · sync</text>
+
+  <rect x="260" y="420" width="160" height="50" rx="6" fill="url(#extGrad)" filter="url(#shadow)"/>
+  <text x="340" y="443" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">📜 OpenAPI Spec</text>
+  <text x="340" y="460" text-anchor="middle" fill="#fef3c7" font-size="9">JSON · YAML import</text>
+
+  <rect x="460" y="420" width="160" height="50" rx="6" fill="url(#extGrad)" filter="url(#shadow)"/>
+  <text x="540" y="443" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">⚙️ Config</text>
+  <text x="540" y="460" text-anchor="middle" fill="#fef3c7" font-size="9">apitape.config.json</text>
+
+  <rect x="660" y="420" width="190" height="50" rx="6" fill="url(#extGrad)" filter="url(#shadow)"/>
+  <text x="755" y="443" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">🧪 Test Runner / CI</text>
+  <text x="755" y="460" text-anchor="middle" fill="#fef3c7" font-size="9">--fail-on-drift</text>
+
+  <!-- Arrows: CLI → Core -->
+  <line x1="230" y1="165" x2="270" y2="165" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowPurple)"/>
+
+  <!-- Arrows: Core → Output -->
+  <line x1="620" y1="165" x2="660" y2="165" stroke="#10b981" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowGreen)"/>
+
+  <!-- Arrows: External → Core -->
+  <line x1="140" y1="420" x2="362" y2="355" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6"/>
+  <line x1="340" y1="420" x2="445" y2="355" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6"/>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <!-- Version badge -->
+  <text x="450" y="510" text-anchor="middle" fill="#475569" font-size="10">apitape v0.3.0 · zero dependencies · Node.js ≥ 18</text>
+</svg>

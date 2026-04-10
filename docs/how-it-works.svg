@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" font-family="Inter, -apple-system, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="captureG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="fixtureG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="genG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="diffG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="mockG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#be185d"/>
+    </linearGradient>
+    <filter id="sh2">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+    </marker>
+    <marker id="arrG" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="400" rx="12" fill="url(#bg2)"/>
+  <text x="450" y="35" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500" letter-spacing="2">HOW IT WORKS</text>
+
+  <!-- Step 1: Capture -->
+  <rect x="30" y="60" width="150" height="130" rx="10" fill="url(#captureG)" filter="url(#sh2)"/>
+  <text x="105" y="90" text-anchor="middle" fill="#fff" font-size="28">🌐</text>
+  <text x="105" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">capture</text>
+  <text x="105" y="138" text-anchor="middle" fill="#e9d5ff" font-size="10">Record live API</text>
+  <text x="105" y="153" text-anchor="middle" fill="#e9d5ff" font-size="10">response as fixture</text>
+  <rect x="55" y="168" width="100" height="16" rx="4" fill="#4c1d95"/>
+  <text x="105" y="180" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="monospace">GET /users</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="180" y1="125" x2="220" y2="125" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 2: Fixture -->
+  <rect x="220" y="60" width="150" height="130" rx="10" fill="url(#fixtureG)" filter="url(#sh2)"/>
+  <text x="295" y="90" text-anchor="middle" fill="#fff" font-size="28">📦</text>
+  <text x="295" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">fixture</text>
+  <text x="295" y="138" text-anchor="middle" fill="#bfdbfe" font-size="10">JSON + metadata</text>
+  <text x="295" y="153" text-anchor="middle" fill="#bfdbfe" font-size="10">stored locally</text>
+  <rect x="240" y="168" width="110" height="16" rx="4" fill="#1e3a5f"/>
+  <text x="295" y="180" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="monospace">.json + .meta.json</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="370" y1="125" x2="410" y2="125" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 3: Generate -->
+  <rect x="410" y="60" width="150" height="130" rx="10" fill="url(#genG)" filter="url(#sh2)"/>
+  <text x="485" y="90" text-anchor="middle" fill="#fff" font-size="28">⚡</text>
+  <text x="485" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">generate</text>
+  <text x="485" y="138" text-anchor="middle" fill="#d1fae5" font-size="10">Types + MSW</text>
+  <text x="485" y="153" text-anchor="middle" fill="#d1fae5" font-size="10">handlers auto-created</text>
+  <rect x="425" y="168" width="120" height="16" rx="4" fill="#064e3b"/>
+  <text x="485" y="180" text-anchor="middle" fill="#6ee7b7" font-size="9" font-family="monospace">.d.ts · .msw.js</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="560" y1="125" x2="600" y2="125" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 4: Diff -->
+  <rect x="600" y="60" width="130" height="130" rx="10" fill="url(#diffG)" filter="url(#sh2)"/>
+  <text x="665" y="90" text-anchor="middle" fill="#fff" font-size="28">🔍</text>
+  <text x="665" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">diff</text>
+  <text x="665" y="138" text-anchor="middle" fill="#fef3c7" font-size="10">Detect API drift</text>
+  <text x="665" y="153" text-anchor="middle" fill="#fef3c7" font-size="10">CI-friendly</text>
+  <rect x="620" y="168" width="90" height="16" rx="4" fill="#78350f"/>
+  <text x="665" y="180" text-anchor="middle" fill="#fcd34d" font-size="9" font-family="monospace">exit 1 drift</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="730" y1="125" x2="755" y2="125" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 5: Mock -->
+  <rect x="755" y="60" width="120" height="130" rx="10" fill="url(#mockG)" filter="url(#sh2)"/>
+  <text x="815" y="90" text-anchor="middle" fill="#fff" font-size="28">🎲</text>
+  <text x="815" y="118" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">mock</text>
+  <text x="815" y="138" text-anchor="middle" fill="#fce7f3" font-size="10">Generate variants</text>
+  <text x="815" y="153" text-anchor="middle" fill="#fce7f3" font-size="10">for broader tests</text>
+  <rect x="770" y="168" width="90" height="16" rx="4" fill="#831843"/>
+  <text x="815" y="180" text-anchor="middle" fill="#f9a8d4" font-size="9" font-family="monospace">--seed 42</text>
+
+  <!-- Bottom: Sync loop arrow -->
+  <path d="M 665 195 L 665 230 Q 665 245 650 245 L 120 245 Q 105 245 105 230 L 105 195" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+  <rect x="340" y="235" width="80" height="20" rx="4" fill="#1e293b"/>
+  <text x="380" y="249" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">🔄 sync</text>
+
+  <!-- Bottom section: Import + Export -->
+  <rect x="30" y="280" width="410" height="95" rx="10" fill="#1e1b4b" fill-opacity="0.4" stroke="#4c1d95" stroke-opacity="0.3"/>
+  <text x="235" y="305" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600" letter-spacing="1">ADDITIONAL WORKFLOWS</text>
+
+  <rect x="50" y="318" width="170" height="40" rx="6" fill="#2e1065" filter="url(#sh2)"/>
+  <text x="135" y="337" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">📜 import</text>
+  <text x="135" y="352" text-anchor="middle" fill="#a78bfa" font-size="9">OpenAPI → fixtures</text>
+
+  <rect x="250" y="318" width="170" height="40" rx="6" fill="#2e1065" filter="url(#sh2)"/>
+  <text x="335" y="337" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">📤 export</text>
+  <text x="335" y="352" text-anchor="middle" fill="#a78bfa" font-size="9">Bundle MSW handlers</text>
+
+  <!-- Bottom section: Tags -->
+  <rect x="470" y="280" width="400" height="95" rx="10" fill="#1c1917" fill-opacity="0.4" stroke="#78716c" stroke-opacity="0.3"/>
+  <text x="670" y="305" text-anchor="middle" fill="#a8a29e" font-size="11" font-weight="600" letter-spacing="1">CROSS-CUTTING</text>
+
+  <rect x="490" y="318" width="100" height="40" rx="6" fill="#292524" filter="url(#sh2)"/>
+  <text x="540" y="337" text-anchor="middle" fill="#d6d3d1" font-size="11" font-weight="600">🏷️ tags</text>
+  <text x="540" y="352" text-anchor="middle" fill="#a8a29e" font-size="9">filter any cmd</text>
+
+  <rect x="610" y="318" width="100" height="40" rx="6" fill="#292524" filter="url(#sh2)"/>
+  <text x="660" y="337" text-anchor="middle" fill="#d6d3d1" font-size="11" font-weight="600">🔐 auth</text>
+  <text x="660" y="352" text-anchor="middle" fill="#a8a29e" font-size="9">bearer · api-key</text>
+
+  <rect x="730" y="318" width="120" height="40" rx="6" fill="#292524" filter="url(#sh2)"/>
+  <text x="790" y="337" text-anchor="middle" fill="#d6d3d1" font-size="11" font-weight="600">⚙️ config</text>
+  <text x="790" y="352" text-anchor="middle" fill="#a8a29e" font-size="9">envs · headers</text>
+</svg>

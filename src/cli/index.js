@@ -103,7 +103,8 @@ cli.command({
     { short: null, long: '--fail-on-drift', description: 'Exit with error code if drift detected', type: 'boolean' },
     { short: '-n', long: '--name', description: 'Filter by fixture name', type: 'string' },
     { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' },
-    { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' }
+    { short: '-j', long: '--json', description: 'Output as JSON', type: 'boolean' },
+    { short: null, long: '--concurrency', description: 'Max parallel requests (default: 4)', type: 'string', defaultValue: '4' }
   ],
   action: withExitCode(diffCommand)
 });
@@ -119,7 +120,8 @@ cli.command({
     { short: '-t', long: '--tag', description: 'Filter by tag', type: 'string' },
     { short: null, long: '--dry-run', description: 'Show what would be synced without making changes', type: 'boolean' },
     { short: null, long: '--force', description: 'Force re-capture even if unchanged', type: 'boolean' },
-    { short: null, long: '--backup', description: 'Backup existing fixtures before overwriting', type: 'boolean' }
+    { short: null, long: '--backup', description: 'Backup existing fixtures before overwriting', type: 'boolean' },
+    { short: null, long: '--concurrency', description: 'Max parallel requests (default: 4)', type: 'string', defaultValue: '4' }
   ],
   action: withExitCode(syncCommand)
 });
