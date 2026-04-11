@@ -1,6 +1,6 @@
 {
   "name": "api-tape",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Record real API responses as test fixtures. Auto-generate types, MSW handlers, and detect API drift.",
   "type": "module",
   "main": "src/index.js",
