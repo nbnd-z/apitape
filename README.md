@@ -59,6 +59,7 @@ npx apitape diff --fail-on-drift
 | `import <spec>` | Generate fixtures from an OpenAPI spec (JSON/YAML) |
 | `mock <name>` | Generate randomised data variants from a fixture |
 | `export` | Bundle all MSW handlers into a single file |
+| `watch` | Watch fixtures and auto-re-capture on metadata changes |
 | `list` | List all fixtures with metadata |
 | `delete <name>` | Remove a fixture and all generated files |
 
@@ -84,6 +85,17 @@ apitape capture https://api.example.com/users \
 
 # Capture error responses
 apitape capture https://api.example.com/missing --name not-found --allow-error
+
+# GraphQL query (auto-wraps as { query: ... }, forces POST)
+apitape capture https://api.example.com/graphql --graphql -d '{ users { id name } }'
+```
+
+### Watch
+
+```bash
+apitape watch                         # Poll every 3s, re-capture on metadata change
+apitape watch --interval 5000         # Custom poll interval (ms)
+apitape watch --typescript --msw      # Regenerate artifacts on capture
 ```
 
 ### Drift Detection
@@ -246,7 +258,7 @@ const variants = generateVariants(response.data, { count: 5, variations: ['name'
 
 ## Requirements
 
-Node.js ≥ 18.0.0
+Node.js ≥ 18.0.0 | Bun ≥ 1.0 | Deno ≥ 2.0
 
 ## Contributing
 
