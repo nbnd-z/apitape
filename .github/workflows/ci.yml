@@ -13,7 +13,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: npm install
       - run: npm test
-      - run: npm run lint
+      - if: matrix.node != 18
+        run: npm run lint
 
   bun:
     runs-on: ubuntu-latest
