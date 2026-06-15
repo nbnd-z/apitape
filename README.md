@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/api-tape?color=cb3837&label=npm)](https://www.npmjs.com/package/api-tape)
 [![downloads](https://img.shields.io/npm/dm/api-tape?color=blue)](https://www.npmjs.com/package/api-tape)
+[![CI](https://github.com/nbnd-z/apitape/actions/workflows/ci.yml/badge.svg)](https://github.com/nbnd-z/apitape/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/nbnd-z/apitape)](https://github.com/nbnd-z/apitape/blob/main/LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![zero deps](https://img.shields.io/badge/dependencies-0-success)](https://www.npmjs.com/package/api-tape)
