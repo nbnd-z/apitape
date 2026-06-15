@@ -110,8 +110,8 @@
   <text x="135" y="352" text-anchor="middle" fill="#a78bfa" font-size="9">OpenAPI → fixtures</text>
 
   <rect x="250" y="318" width="170" height="40" rx="6" fill="#2e1065" filter="url(#sh2)"/>
-  <text x="335" y="337" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">📤 export</text>
-  <text x="335" y="352" text-anchor="middle" fill="#a78bfa" font-size="9">Bundle MSW handlers</text>
+  <text x="335" y="337" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">👀 watch</text>
+  <text x="335" y="352" text-anchor="middle" fill="#a78bfa" font-size="9">Auto re-capture on change</text>
 
   <!-- Bottom section: Tags -->
   <rect x="470" y="280" width="400" height="95" rx="10" fill="#1c1917" fill-opacity="0.4" stroke="#78716c" stroke-opacity="0.3"/>

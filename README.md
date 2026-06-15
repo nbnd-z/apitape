@@ -17,7 +17,10 @@ Snapshot your API. Auto-generate types, mocks, and drift detection — zero runt
 
 - **One command** to capture a live API response, generate TypeScript types, and create MSW handlers
 - **Drift detection** compares fixtures against the live API — catch breaking changes in CI before your tests do
+- **Watch mode** auto re-captures when fixtures change — like vitest watch for your API layer
+- **GraphQL support** — `--graphql` flag wraps queries and forces POST automatically
 - **Zero dependencies** — ships as a single package with no transitive installs
+- **Multi-runtime** — tested on Node.js 18+, Bun, and Deno
 - **Programmatic API** — every function is exported for library usage
 
 <p align="center">
