@@ -3,7 +3,7 @@
  * @module core/differ
  */
 
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 /** @type {number} Configurable array sample size for comparison */
 let _arraySampleSize = 5;

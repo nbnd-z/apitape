@@ -4,8 +4,8 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { saveFixture, loadFixture, loadMetadata, listFixtures } from '../../src/core/fixture-store.js';
 
 const TEST_DIR = './test-sync-fixture';

@@ -3,8 +3,8 @@
  * @module cli/commands/export
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { listFixtures, loadMetadata, getFixturesDir } from '../../core/fixture-store.js';
 import { generateMSWHandlers } from '../../formatters/msw.js';
 

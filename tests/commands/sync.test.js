@@ -4,10 +4,10 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import fs from 'node:fs';
+import path from 'node:path';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 

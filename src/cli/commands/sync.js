@@ -3,14 +3,14 @@
  * @module cli/commands/sync
  */
 
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 import { loadConfig, resolveEnv } from '../../core/config.js';
 import { fetchWithAuth } from '../../core/http-client.js';
 import { listFixtures, loadFixture, saveFixture, getFixturesDir } from '../../core/fixture-store.js';
 import { regenerateExistingArtifacts } from '../../core/artifacts.js';
 import { hashValue } from '../../core/differ.js';
 import { sanitizeName, pAll } from '../../core/utils.js';
-import path from 'path';
+import path from 'node:path';
 
 /**
  * Sync all fixtures from their original URLs

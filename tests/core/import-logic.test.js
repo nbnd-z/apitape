@@ -4,8 +4,8 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { generateMockData } from '../../src/core/mock-generator.js';
 
 describe('Import Module Core Logic', () => {

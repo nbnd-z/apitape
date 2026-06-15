@@ -3,9 +3,9 @@
  * @module cli/commands/types
  */
 
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { loadConfig } from '../../core/config.js';
 import { listFixtures, loadFixture } from '../../core/fixture-store.js';
 import { generateJSDoc, generateTypeScript } from '../../core/generator.js';

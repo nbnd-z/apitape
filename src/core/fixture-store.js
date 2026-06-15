@@ -3,9 +3,9 @@
  * @module core/fixture-store
  */
 
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { loadConfig } from './config.js';
 import { sanitizeName } from './utils.js';
 import { FixtureNotFoundError, FixtureSizeError } from './errors.js';

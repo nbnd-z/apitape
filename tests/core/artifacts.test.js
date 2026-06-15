@@ -4,8 +4,8 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { generateArtifacts, regenerateExistingArtifacts } from '../../src/core/artifacts.js';
 
 const TEST_DIR = path.join(process.cwd(), 'temp-test-artifacts');

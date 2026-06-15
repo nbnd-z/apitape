@@ -9,7 +9,7 @@ import { saveFixture, getFixturesDir, fixtureExists } from '../../core/fixture-s
 import { generateArtifacts } from '../../core/artifacts.js';
 import { parseHeaders } from '../utils.js';
 import { sanitizeName } from '../../core/utils.js';
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 
 /**
  * Capture an API response as a fixture
