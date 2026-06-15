@@ -49,8 +49,14 @@ export async function captureCommand(url, options = {}) {
       }
     }
 
+    // GraphQL: --graphql flag wraps --data as query body, forces POST
+    if (options.graphql && options.data && !body?.query) {
+      body = { query: typeof body === 'string' ? body : options.data };
+    }
+    const effectiveMethod = options.graphql ? 'POST' : method;
+
     const response = await fetchWithAuth(resolvedUrl, {
-      method,
+      method: effectiveMethod,
       headers: mergedHeaders,
       auth: authOptions,
       body
@@ -61,15 +67,16 @@ export async function captureCommand(url, options = {}) {
       return 1;
     }
 
-    const fixtureName = options.name || nameFromUrl(resolvedUrl, method);
+    const fixtureName = options.name || nameFromUrl(resolvedUrl, effectiveMethod);
     const isOverwrite = await fixtureExists(fixtureName);
 
     const metadata = {
       url: resolvedUrl,
-      method,
+      method: effectiveMethod,
       capturedAt: new Date().toISOString(),
       headers: mergedHeaders,
       status: response.status,
+      ...(options.graphql ? { graphql: true } : {}),
       ...(options.tag ? { tags: Array.isArray(options.tag) ? options.tag : [options.tag] } : {})
     };
 

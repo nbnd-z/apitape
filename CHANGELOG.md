@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-06-15
 
 ### Added
-- GitHub Actions CI — tests on Node 18, 20, 22 on every push/PR
+- `watch` command — poll-based file watcher that auto-re-captures fixtures on metadata changes (portable across Node/Bun/Deno)
+- `--graphql` flag on `capture` — treats `--data` as GraphQL query, forces POST, stores `graphql: true` in metadata
+- GitHub Actions CI — tests on Node 18, 20, 22, Bun, and Deno on every push/PR
 - `exports` field in package.json — proper ESM resolution for bundlers (Vite, Rollup, esbuild)
+- Bun and Deno compatibility — CI validates both runtimes
 
 ### Changed
 - Promoted to v1.0.0 — stable API, 208 tests passing, zero dependencies, production-ready

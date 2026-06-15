@@ -17,6 +17,7 @@ import { importCommand } from './commands/import.js';
 import { mockCommand, mockAllCommand } from './commands/mock.js';
 import { deleteCommand } from './commands/delete.js';
 import { exportCommand } from './commands/export.js';
+import { watchCommand } from './commands/watch.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../../package.json');
@@ -66,6 +67,7 @@ cli.command({
     { short: null, long: '--msw', description: 'Generate MSW handler file (.msw.js)', type: 'boolean' },
     { short: null, long: '--allow-error', description: 'Capture non-2xx responses (e.g. 404, 500)', type: 'boolean' },
     { short: '-d', long: '--data', description: 'Request body (JSON string or @file.json)', type: 'string' },
+    { short: null, long: '--graphql', description: 'Treat --data as GraphQL query, force POST', type: 'boolean' },
     { short: '-t', long: '--tag', description: 'Tag fixture for grouping/filtering', type: 'string', multiple: true }
   ],
   action: withExitCode(captureCommand)
@@ -191,6 +193,18 @@ cli.command({
     { short: null, long: '--msw', description: 'Generate MSW handlers', type: 'boolean' }
   ],
   action: withExitCode(mockAllCommand)
+});
+
+cli.command({
+  name: 'watch',
+  description: 'Watch fixtures and auto-re-capture on changes',
+  positional: null,
+  options: [
+    { short: '-i', long: '--interval', description: 'Poll interval in ms (default: 3000)', type: 'string', defaultValue: '3000' },
+    { short: null, long: '--typescript', description: 'Regenerate TypeScript types on capture', type: 'boolean' },
+    { short: null, long: '--msw', description: 'Regenerate MSW handlers on capture', type: 'boolean' }
+  ],
+  action: withExitCode(watchCommand)
 });
 
 cli.run();
